@@ -3,6 +3,7 @@ import './App.css';
 import SearchForm from "./components/SearchForm";
 import ResultContainer from "./components/ResultContainer";
 import Header from "./components/Header";
+import Footer from "./components/Footer";
 
 class App extends React.Component {
     render() {
@@ -13,6 +14,7 @@ class App extends React.Component {
                     <SearchForm />
                     <ResultContainer />
                 </main>
+                <Footer />
             </div>
         );
     }

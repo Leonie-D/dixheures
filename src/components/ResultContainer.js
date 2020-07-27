@@ -1,8 +1,16 @@
 import React from 'react';
+import ResultItem from "./ResultItem";
 
 class ResultContainer extends React.Component {
     render(){
-        return("a");
+        return(
+            <div>
+                <h2>tous les résultats ici</h2>
+                <ResultItem />
+                <ResultItem />
+                <ResultItem />
+            </div>
+        );
     }
 }
 
