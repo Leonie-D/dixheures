@@ -6,7 +6,7 @@ class SearchForm extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            "query" : {"value" : "", "label" : ""},
+            "query" : "",
             "queryField" : "all",
             "result" : [],
         };
@@ -14,15 +14,16 @@ class SearchForm extends React.Component {
         this.intIds = [];
     }
 
-    updateQuery = (query) => {
+    updateQuery = (ev) => {
+        console.log(ev.target);
         const {queryField} = this.state;
-        query = query === null ? {"value" : "", "label" : ""} : query;
+        const query = ev.target.label;
+        this.queryId = ev.target.value;
 
         this.setState({
             "query" : query,
             "result" : [],
         });
-        this.queryId = query.value;
 
         for(let intId of this.intIds) {
             clearTimeout(intId);
@@ -31,16 +32,16 @@ class SearchForm extends React.Component {
 
         switch(queryField) {
             case 'all' :
-                getAllByName(query.label, 0, this.updateResult);
+                getAllByName(query, 0, this.updateResult);
                 break;
             case 'artist' :
-                getArtistsByName(query.label, 0, this.updateResult);
+                getArtistsByName(query, 0, this.updateResult);
                 break;
             case 'album' :
-                getReleasesByName(query.label, 0, this.updateResult);
+                getReleasesByName(query, 0, this.updateResult);
                 break;
             case 'title' :
-                getTitlesByName(query.label, 0, this.updateResult);
+                getTitlesByName(query, 0, this.updateResult);
                 break;
         };
     }
@@ -60,16 +61,16 @@ class SearchForm extends React.Component {
 
         switch(queryField.value) {
             case 'all' :
-                getAllByName(query.label, 0, this.updateResult);
+                getAllByName(query, 0, this.updateResult);
                 break;
             case 'artist' :
-                getArtistsByName(query.label, 0, this.updateResult);
+                getArtistsByName(query, 0, this.updateResult);
                 break;
             case 'album' :
-                getReleasesByName(query.label, 0, this.updateResult);
+                getReleasesByName(query, 0, this.updateResult);
                 break;
             case 'title' :
-                getTitlesByName(query.label, 0, this.updateResult);
+                getTitlesByName(query, 0, this.updateResult);
                 break;
         };
     }
@@ -90,16 +91,16 @@ class SearchForm extends React.Component {
                 offset += 100;
                 switch(queryField) {
                     case 'all' :
-                        getAllByName(query.label, offset, this.updateResult);
+                        getAllByName(query, offset, this.updateResult);
                         break;
                     case 'artist' :
-                        getArtistsByName(query.label, offset, this.updateResult);
+                        getArtistsByName(query, offset, this.updateResult);
                         break;
                     case 'album' :
-                        getReleasesByName(query.label, offset, this.updateResult);
+                        getReleasesByName(query, offset, this.updateResult);
                         break;
                     case 'title' :
-                        getTitlesByName(query.label, offset, this.updateResult);
+                        getTitlesByName(query, offset, this.updateResult);
                         break;
                 };
             }, 2000);
@@ -133,20 +134,16 @@ class SearchForm extends React.Component {
         return(
             <form onSubmit={this.submit}>
 
-                <Select name = "query"
-                        onChange = {this.updateQuery}
-                        options = {result}
-                        value = {query}
-                        placeholder = "Please enter an artist name, album title or song title"
-                        isClearable={true}
-                        theme={theme => ({
-                            ...theme,
-                            colors: {
-                                ...theme.colors,
-                                primary25: 'hsl(153, 28%, 90%)',
-                                primary: '#4F6457',
-                            },
-                        })}/>
+                <input name="query"
+                       type="text"
+                       onChange={this.updateQuery}
+                       value={query}
+                       placeholder="Please enter an artist name, album title or song title"
+                       list="resultOptions"
+                />
+                <datalist id="resultOptions" className="resultOptions">
+                    {result.map(r => <option key={r.value} value={r.value} label={r.label}/>)}
+                </datalist>
 
                 <Select name = "queryField"
                         onChange = {this.updateField}
