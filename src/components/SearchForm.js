@@ -9,7 +9,6 @@ class SearchForm extends React.Component {
             "query" : {"value" : "", "label" : ""},
             "queryField" : "all",
             "result" : [],
-            "selected" : false
         };
         this.queryId = "";
         this.intIds = [];
@@ -17,10 +16,10 @@ class SearchForm extends React.Component {
 
     updateQuery = (query) => {
         const {queryField} = this.state;
+        query = query === null ? {"value" : "", "label" : ""} : query;
 
         this.setState({
             "query" : query,
-            "selected" : false,
             "result" : [],
         });
         this.queryId = query.value;
@@ -77,8 +76,8 @@ class SearchForm extends React.Component {
 
     updateResult = (result, responsesNb, offset) => {
         // a voir si nécessaire de véfifier que les résultats qui arrivent sont bien attendus compte tenu de la recherche en cours ou s'il s'agit de résultats tardifs
-        // idée : envoyer un 'token' qui serait stocké ici en this.token
-        // 1 token par query en cours
+        // idée : envoyer un 'token' pour la query en cours qui serait stocké ici en this.token et comparé à réception
+        // abandonné étant donné que le Select de react-select ajoute une couche de 'filtre' et n'affiche que des choses pertinentes
         result = [...this.state.result, ...result];
         this.setState({
             "result" : result
@@ -113,14 +112,6 @@ class SearchForm extends React.Component {
             clearTimeout(intId);
         }
     }
-/*
-    fillInput = (ev) => {
-        this.setState({
-            "query" : ev.target.innerText,
-            "selected" : true
-        });
-        this.queryId = ev.target.getAttribute('data-id');
-    }*/
 
     submit = (ev) => {
         ev.preventDefault();
@@ -137,14 +128,10 @@ class SearchForm extends React.Component {
                 {value :'album' , label : 'Album'}
         ];
 
-        const {query, result, selected, queryField} = this.state;
+        const {query, result, queryField} = this.state;
 
         return(
             <form onSubmit={this.submit}>
-                {/*<input name = "query"
-                       onChange = {this.updateQuery}
-                       value = {query}
-                       placeholder = "Please enter an artist name, album title or song title"/>*/}
 
                 <Select name = "query"
                         onChange = {this.updateQuery}
@@ -179,13 +166,6 @@ class SearchForm extends React.Component {
 
                 <button>Rechercher</button>
 
-                {/*{(result === null || query === "" || selected) ?
-                    <ul className="hiddenOptions"> </ul>
-                    :
-                    <ul className="resultOptions">
-                        {result.map((r, k) => <li key={k} data-id={r.id} onClick={this.fillInput}>{r.name}</li>)}
-                    </ul>
-                }*/}
             </form>
         );
     }
