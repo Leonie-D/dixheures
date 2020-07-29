@@ -1,11 +1,12 @@
 import React from 'react';
 import {getArtistsByName, getTitlesByName, getReleasesByName, getAllByName} from "../api/musicAPI";
+import Select from 'react-select';
 
 class SearchForm extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            "query" : "",
+            "query" : {"value" : "", "label" : ""},
             "queryField" : "all",
             "result" : [],
             "selected" : false
@@ -14,15 +15,15 @@ class SearchForm extends React.Component {
         this.intIds = [];
     }
 
-    updateQuery = (ev) => {
+    updateQuery = (query) => {
         const {queryField} = this.state;
-        const query = ev.target.value;
 
         this.setState({
             "query" : query,
             "selected" : false,
             "result" : [],
         });
+        this.queryId = query.value;
 
         for(let intId of this.intIds) {
             clearTimeout(intId);
@@ -31,26 +32,25 @@ class SearchForm extends React.Component {
 
         switch(queryField) {
             case 'all' :
-                getAllByName(query, 0, this.updateResult);
+                getAllByName(query.label, 0, this.updateResult);
                 break;
             case 'artist' :
-                getArtistsByName(query, 0, this.updateResult);
+                getArtistsByName(query.label, 0, this.updateResult);
                 break;
             case 'album' :
-                getReleasesByName(query, 0, this.updateResult);
+                getReleasesByName(query.label, 0, this.updateResult);
                 break;
             case 'title' :
-                getTitlesByName(query, 0, this.updateResult);
+                getTitlesByName(query.label, 0, this.updateResult);
                 break;
         };
     }
 
-    updateField = (ev) => {
+    updateField = (queryField) => {
         const {query} = this.state;
-        const queryField = ev.target.value;
 
         this.setState({
-            "queryField" : queryField,
+            "queryField" : queryField.value,
             "result" : [],
         });
 
@@ -59,23 +59,26 @@ class SearchForm extends React.Component {
         }
         this.intIds = [];
 
-        switch(queryField) {
+        switch(queryField.value) {
             case 'all' :
-                getAllByName(query, 0, this.updateResult);
+                getAllByName(query.label, 0, this.updateResult);
                 break;
             case 'artist' :
-                getArtistsByName(query, 0, this.updateResult);
+                getArtistsByName(query.label, 0, this.updateResult);
                 break;
             case 'album' :
-                getReleasesByName(query, 0, this.updateResult);
+                getReleasesByName(query.label, 0, this.updateResult);
                 break;
             case 'title' :
-                getTitlesByName(query, 0, this.updateResult);
+                getTitlesByName(query.label, 0, this.updateResult);
                 break;
         };
     }
 
     updateResult = (result, responsesNb, offset) => {
+        // a voir si nécessaire de véfifier que les résultats qui arrivent sont bien attendus compte tenu de la recherche en cours ou s'il s'agit de résultats tardifs
+        // idée : envoyer un 'token' qui serait stocké ici en this.token
+        // 1 token par query en cours
         result = [...this.state.result, ...result];
         this.setState({
             "result" : result
@@ -88,16 +91,16 @@ class SearchForm extends React.Component {
                 offset += 100;
                 switch(queryField) {
                     case 'all' :
-                        getAllByName(query, offset, this.updateResult);
+                        getAllByName(query.label, offset, this.updateResult);
                         break;
                     case 'artist' :
-                        getArtistsByName(query, offset, this.updateResult);
+                        getArtistsByName(query.label, offset, this.updateResult);
                         break;
                     case 'album' :
-                        getReleasesByName(query, offset, this.updateResult);
+                        getReleasesByName(query.label, offset, this.updateResult);
                         break;
                     case 'title' :
-                        getTitlesByName(query, offset, this.updateResult);
+                        getTitlesByName(query.label, offset, this.updateResult);
                         break;
                 };
             }, 2000);
@@ -110,50 +113,79 @@ class SearchForm extends React.Component {
             clearTimeout(intId);
         }
     }
-
+/*
     fillInput = (ev) => {
         this.setState({
             "query" : ev.target.innerText,
             "selected" : true
         });
-        this.queryId = ev.target.id;
-    }
+        this.queryId = ev.target.getAttribute('data-id');
+    }*/
 
     submit = (ev) => {
         ev.preventDefault();
-        console.log(this.queryId)
+        console.log(this.queryId);
     }
 
     render() {
 
         // Select dropdown options
         const selectOptions = [
-            ['all' , 'Tous les champs'],
-            ['artist' , 'Artiste'],
-            ['title' , 'Titre'],
-            ['album' , 'Album']
+                {value : 'all' , label : 'Tous les champs'},
+                {value : 'artist' , label : 'Artiste'},
+                {value : 'title' , label : 'Titre'},
+                {value :'album' , label : 'Album'}
         ];
 
-        const {query, result, selected} = this.state;
+        const {query, result, selected, queryField} = this.state;
 
         return(
             <form onSubmit={this.submit}>
-                <input name="query"
-                       onChange={this.updateQuery}
-                       value={query}
-                       placeholder="Please enter an artist name, album title or song title"
-                ></input>
-                <select onChange={this.updateField}>
-                    {selectOptions.map(r => <option key={r[0]} value={r[0]}>{r[1]}</option>)}
-                </select>
+                {/*<input name = "query"
+                       onChange = {this.updateQuery}
+                       value = {query}
+                       placeholder = "Please enter an artist name, album title or song title"/>*/}
+
+                <Select name = "query"
+                        onChange = {this.updateQuery}
+                        options = {result}
+                        value = {query}
+                        placeholder = "Please enter an artist name, album title or song title"
+                        isClearable={true}
+                        theme={theme => ({
+                            ...theme,
+                            colors: {
+                                ...theme.colors,
+                                primary25: 'hsl(153, 28%, 90%)',
+                                primary: '#4F6457',
+                            },
+                        })}/>
+
+                <Select name = "queryField"
+                        onChange = {this.updateField}
+                        options = {selectOptions}
+                        defaultValue={selectOptions[0]}
+                        value = {queryField.label}
+                        placeholder = "Please select research field"
+                        isSearchable={false}
+                        theme={theme => ({
+                            ...theme,
+                            colors: {
+                                ...theme.colors,
+                                primary25: 'hsl(153, 28%, 90%)',
+                                primary: '#4F6457',
+                            },
+                        })}/>
+
                 <button>Rechercher</button>
-                {(result === null || query === "" || selected) ?
-                    <ul className="hiddenOptions"></ul>
+
+                {/*{(result === null || query === "" || selected) ?
+                    <ul className="hiddenOptions"> </ul>
                     :
                     <ul className="resultOptions">
-                        {result.map(r => <li key={r.id} id={r.id} onClick={this.fillInput}>{r.name}</li>)}
+                        {result.map((r, k) => <li key={k} data-id={r.id} onClick={this.fillInput}>{r.name}</li>)}
                     </ul>
-                }
+                }*/}
             </form>
         );
     }
