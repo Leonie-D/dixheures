@@ -10,44 +10,58 @@ class SearchForm extends React.Component {
             "queryField" : "all",
             "result" : [],
         };
+        //this.queryToken = "";
         this.queryId = "";
         this.intIds = [];
     }
 
-    updateQuery = (ev) => {
-        console.log(ev.target);
-        const {queryField} = this.state;
-        const query = ev.target.label;
-        this.queryId = ev.target.value;
+    updateQuery = (query) => {
+        if(query !== "") {
+            const {queryField} = this.state;
 
+            this.setState({
+                "query" : query,
+                "result" : [],
+            });
+
+            //this.queryToken = Math.random().toString(36).substr(2) + Math.random().toString(36).substr(2);
+
+            for(let intId of this.intIds) {
+                clearTimeout(intId);
+            }
+            this.intIds = [];
+
+            switch(queryField) {
+                case 'all' :
+                    getAllByName(query, 0, this.updateResult);
+                    break;
+                case 'artist' :
+                    getArtistsByName(query, 0, this.updateResult);
+                    break;
+                case 'album' :
+                    getReleasesByName(query, 0, this.updateResult);
+                    break;
+                case 'title' :
+                    getTitlesByName(query, 0, this.updateResult);
+                    break;
+            };
+        }
+    }
+
+    updateFinalQuery = (query) => {
         this.setState({
             "query" : query,
-            "result" : [],
         });
+        this.queryId = query.value;
 
         for(let intId of this.intIds) {
             clearTimeout(intId);
         }
         this.intIds = [];
-
-        switch(queryField) {
-            case 'all' :
-                getAllByName(query, 0, this.updateResult);
-                break;
-            case 'artist' :
-                getArtistsByName(query, 0, this.updateResult);
-                break;
-            case 'album' :
-                getReleasesByName(query, 0, this.updateResult);
-                break;
-            case 'title' :
-                getTitlesByName(query, 0, this.updateResult);
-                break;
-        };
     }
 
     updateField = (queryField) => {
-        const {query} = this.state;
+        const query = typeof this.state.query === "string" ? this.state.query : this.state.query.label;
 
         this.setState({
             "queryField" : queryField.value,
@@ -86,7 +100,7 @@ class SearchForm extends React.Component {
 
         const {query, queryField} = this.state;
 
-        if(result.length < responsesNb) {
+        if(result.length < responsesNb && typeof query == "string") {
             const intId = setTimeout(() => {
                 offset += 100;
                 switch(queryField) {
@@ -119,6 +133,14 @@ class SearchForm extends React.Component {
         console.log(this.queryId);
     }
 
+    customFilterOption = (option, rawInput) => {
+        const words = rawInput.split(' ');
+        return words.reduce(
+            (acc, cur) => acc && option.label.toLowerCase().includes(cur.toLowerCase()),
+            true,
+        );
+    };
+
     render() {
 
         // Select dropdown options
@@ -133,7 +155,7 @@ class SearchForm extends React.Component {
 
         return(
             <form onSubmit={this.submit}>
-
+               {/* https://github.com/JedWatson/react-select/issues/1351
                 <input name="query"
                        type="text"
                        onChange={this.updateQuery}
@@ -142,13 +164,30 @@ class SearchForm extends React.Component {
                        list="resultOptions"
                 />
                 <datalist id="resultOptions" className="resultOptions">
-                    {result.map(r => <option key={r.value} value={r.value} label={r.label}/>)}
-                </datalist>
+                    {result.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+                </datalist>*/}
+
+                <Select name = "query"
+                        onInputChange = {this.updateQuery}
+                        onChange = {this.updateFinalQuery}
+                        options = {result}
+                        value = {query}
+                        placeholder = "Please enter an artist name, album title or song title"
+                        isSearchable = {true}
+                        isClearable = {true}
+                        theme={theme => ({
+                            ...theme,
+                            colors: {
+                                ...theme.colors,
+                                primary25: 'hsl(153, 28%, 90%)',
+                                primary: '#4F6457',
+                            },
+                        })}/>
 
                 <Select name = "queryField"
                         onChange = {this.updateField}
                         options = {selectOptions}
-                        defaultValue={selectOptions[0]}
+                        defaultValue = {selectOptions[0]}
                         value = {queryField.label}
                         placeholder = "Please select research field"
                         isSearchable={false}
