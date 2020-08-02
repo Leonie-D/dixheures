@@ -13,51 +13,74 @@ class SearchForm extends React.Component {
         //this.queryToken = "";
         this.queryId = "";
         this.intIds = [];
+        this.nbSuccessRequests = 0;
+        this.responsesNb = 0;
+    }
+
+    sendRequest = (queryField, query, offset, callback) => {
+        switch(queryField) {
+            case 'all' :
+                // moyennement convaincue : les résultats vont potentiellement contenir 100 artistes puis 100 albums, etc..
+                getArtistsByName(query, offset, callback);
+                getReleasesByName(query, offset, callback);
+                getTitlesByName(query, offset, callback);
+                break;
+            case 'artist' :
+                getArtistsByName(query, offset, callback);
+                break;
+            case 'album' :
+                getReleasesByName(query, offset, callback);
+                break;
+            case 'title' :
+                getTitlesByName(query, offset, callback);
+                break;
+        };
     }
 
     updateQuery = (query) => {
-        if(query !== "") {
-            const {queryField} = this.state;
+        const {queryField} = this.state;
 
-            this.setState({
-                "query" : query,
-                "result" : [],
-            });
-
-            //this.queryToken = Math.random().toString(36).substr(2) + Math.random().toString(36).substr(2);
-
-            for(let intId of this.intIds) {
-                clearTimeout(intId);
-            }
-            this.intIds = [];
-
-            switch(queryField) {
-                case 'all' :
-                    getAllByName(query, 0, this.updateResult);
-                    break;
-                case 'artist' :
-                    getArtistsByName(query, 0, this.updateResult);
-                    break;
-                case 'album' :
-                    getReleasesByName(query, 0, this.updateResult);
-                    break;
-                case 'title' :
-                    getTitlesByName(query, 0, this.updateResult);
-                    break;
-            };
-        }
-    }
-
-    updateFinalQuery = (query) => {
         this.setState({
             "query" : query,
+            "result" : [],
         });
-        this.queryId = query.value;
+
+        //this.queryToken = Math.random().toString(36).substr(2) + Math.random().toString(36).substr(2);
 
         for(let intId of this.intIds) {
             clearTimeout(intId);
         }
         this.intIds = [];
+
+        this.sendRequest(queryField, query, 0, this.updateResult);
+    }
+
+    updateFinalQuery = (query) => {
+        this.setState({
+            "query" : query !== null ? query : "",
+        });
+        this.queryId = query !== null ? query : "";
+
+        for(let intId of this.intIds) {
+            clearTimeout(intId);
+        }
+        this.intIds = [];
+    }
+
+    keepInputValue = (ev) => {
+        if(ev.target.value !== "") {
+            this.setState({
+                "query" : ev.target.value,
+            });
+        }
+    }
+
+    removeFinalQuery = (ev) => {
+        if(ev.target.value != this.state.query) {
+            this.setState({
+                "query" : "",
+            });
+        }
     }
 
     updateField = (queryField) => {
@@ -73,20 +96,7 @@ class SearchForm extends React.Component {
         }
         this.intIds = [];
 
-        switch(queryField.value) {
-            case 'all' :
-                getAllByName(query, 0, this.updateResult);
-                break;
-            case 'artist' :
-                getArtistsByName(query, 0, this.updateResult);
-                break;
-            case 'album' :
-                getReleasesByName(query, 0, this.updateResult);
-                break;
-            case 'title' :
-                getTitlesByName(query, 0, this.updateResult);
-                break;
-        };
+        this.sendRequest(queryField.value, query, 0, this.updateResult);
     }
 
     updateResult = (result, responsesNb, offset) => {
@@ -98,25 +108,20 @@ class SearchForm extends React.Component {
             "result" : result
         });
 
+        this.nbSuccessRequests ++; //penser à reinitialiser au changement de requete
+
         const {query, queryField} = this.state;
 
-        if(result.length < responsesNb && typeof query == "string") {
+        if(queryField === "all" && this.nbSuccessRequests <= 3) {
+            this.responsesNb += responsesNb;
+        } else if(queryField !== "all") {
+            this.responsesNb = responsesNb;
+        }
+        // pb ici, les requetes sont envoyées plusieurs fois...
+        if(result.length < this.responsesNb && typeof query == "string" && (queryField !== "all" || this.nbSuccessRequests % 3 !== 0)) {
             const intId = setTimeout(() => {
                 offset += 100;
-                switch(queryField) {
-                    case 'all' :
-                        getAllByName(query, offset, this.updateResult);
-                        break;
-                    case 'artist' :
-                        getArtistsByName(query, offset, this.updateResult);
-                        break;
-                    case 'album' :
-                        getReleasesByName(query, offset, this.updateResult);
-                        break;
-                    case 'title' :
-                        getTitlesByName(query, offset, this.updateResult);
-                        break;
-                };
+                this.sendRequest(queryField, query, offset, this.updateResult);
             }, 2000);
             this.intIds = [...this.intIds, intId];
         }
@@ -133,14 +138,6 @@ class SearchForm extends React.Component {
         console.log(this.queryId);
     }
 
-    customFilterOption = (option, rawInput) => {
-        const words = rawInput.split(' ');
-        return words.reduce(
-            (acc, cur) => acc && option.label.toLowerCase().includes(cur.toLowerCase()),
-            true,
-        );
-    };
-
     render() {
 
         // Select dropdown options
@@ -155,22 +152,14 @@ class SearchForm extends React.Component {
 
         return(
             <form onSubmit={this.submit}>
-               {/* https://github.com/JedWatson/react-select/issues/1351
-                <input name="query"
-                       type="text"
-                       onChange={this.updateQuery}
-                       value={query}
-                       placeholder="Please enter an artist name, album title or song title"
-                       list="resultOptions"
-                />
-                <datalist id="resultOptions" className="resultOptions">
-                    {result.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-                </datalist>*/}
 
                 <Select name = "query"
                         onInputChange = {this.updateQuery}
                         onChange = {this.updateFinalQuery}
+                        onBlur = {this.keepInputValue}
+                        onFocus = {this.removeFinalQuery}
                         options = {result}
+                        inputValue = {typeof query === "string" ? query : ''}
                         value = {query}
                         placeholder = "Please enter an artist name, album title or song title"
                         isSearchable = {true}
