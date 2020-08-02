@@ -37,22 +37,26 @@ class SearchForm extends React.Component {
         };
     }
 
-    updateQuery = (query) => {
-        const {queryField} = this.state;
+    updateQuery = (query, action) => {
+        if(action.action === "input-change"){
+            const {queryField} = this.state;
 
-        this.setState({
-            "query" : query,
-            "result" : [],
-        });
+            this.setState({
+                "query" : query,
+                "result" : [],
+            });
 
-        //this.queryToken = Math.random().toString(36).substr(2) + Math.random().toString(36).substr(2);
+            //this.queryToken = Math.random().toString(36).substr(2) + Math.random().toString(36).substr(2);
 
-        for(let intId of this.intIds) {
-            clearTimeout(intId);
+            for(let intId of this.intIds) {
+                clearTimeout(intId);
+            }
+            this.intIds = [];
+
+            if(query !== "") {
+                this.sendRequest(queryField, query, 0, this.updateResult);
+            }
         }
-        this.intIds = [];
-
-        this.sendRequest(queryField, query, 0, this.updateResult);
     }
 
     updateFinalQuery = (query) => {
@@ -67,16 +71,16 @@ class SearchForm extends React.Component {
         this.intIds = [];
     }
 
-    keepInputValue = (ev) => {
-        if(ev.target.value !== "") {
+    /*keepInputValue = (ev) => {
+        if(ev.target.value === this.state.query) {
             this.setState({
                 "query" : ev.target.value,
             });
         }
-    }
+    }*/
 
     removeFinalQuery = (ev) => {
-        if(ev.target.value != this.state.query) {
+        if(ev.target.value !== this.state.query) {
             this.setState({
                 "query" : "",
             });
@@ -156,19 +160,20 @@ class SearchForm extends React.Component {
                 <Select name = "query"
                         onInputChange = {this.updateQuery}
                         onChange = {this.updateFinalQuery}
-                        onBlur = {this.keepInputValue}
+                        //onBlur = {this.keepInputValue}
                         onFocus = {this.removeFinalQuery}
                         options = {result}
+                        noOptionsMessage = {() => "Hum... je ne trouve aucun résultat"}
                         inputValue = {typeof query === "string" ? query : ''}
                         value = {query}
-                        placeholder = "Please enter an artist name, album title or song title"
+                        placeholder = "Saisis ta recherche"
                         isSearchable = {true}
                         isClearable = {true}
                         theme={theme => ({
                             ...theme,
                             colors: {
                                 ...theme.colors,
-                                primary25: 'hsl(153, 28%, 90%)',
+                                primary25: 'hsl(153,28%,90%)',
                                 primary: '#4F6457',
                             },
                         })}/>
@@ -178,7 +183,6 @@ class SearchForm extends React.Component {
                         options = {selectOptions}
                         defaultValue = {selectOptions[0]}
                         value = {queryField.label}
-                        placeholder = "Please select research field"
                         isSearchable={false}
                         theme={theme => ({
                             ...theme,
@@ -189,7 +193,7 @@ class SearchForm extends React.Component {
                             },
                         })}/>
 
-                <button>Rechercher</button>
+                <button>C'est parti</button>
 
             </form>
         );

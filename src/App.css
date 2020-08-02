@@ -51,20 +51,6 @@ form > * {
   padding: .2rem .5rem;
 }
 
-/*form input {
-  border-color: hsl(0,0%,80%);
-  border-radius: 4px;
-  border-style: solid;
-  border-width: 1px;
-  margin-top: 3px;
-  outline: none;
-  color: hsl(0,0%,20%);
-}
-
-form input:focus {
-  border: solid 2px #4F6457;
-}*/
-
 form button {
   background-color: hsl(0,0%,100%);
   border-color: hsl(0,0%,80%);
@@ -81,29 +67,3 @@ form button:hover {
   border-color: hsl(0,0%,100%);
   color: hsl(0,0%,100%);
 }
-
-/*
-.resultOptions {
-  grid-column: 1 / 2;
-  background-color: #fff;
-  padding: 0;
-  position: relative;
-  top: -3px;
-  min-height: 152px;
-  overflow: scroll;
-  border: .5px solid hsl(0,0%,80%);
-  border-radius: 4px;
-  box-shadow: 0px 0px 10px 1px hsl(0,0%,90%);
-}
-
-.resultOptions li {
-  list-style: none;
-  cursor: pointer;
-  padding: .2rem .5rem;
-  text-align: start;
-}
-
-.resultOptions li:hover,
-.resultOptions li:focus {
-  background-color: hsl(153, 28%, 90%);
-}*/
