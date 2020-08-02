@@ -1,6 +1,6 @@
 export const getArtistsByName = (query, offset, updateResult) => {
     const request = new XMLHttpRequest();
-    const escapedQuery = query.replace(/([\!\*\+\&\|\(\)\[\]\{\}\^\~\?\:\"])/g, "\\$1");
+    query = query.replace(/([\!\*\+\&\|\(\)\[\]\{\}\^\~\?\:\"])/g, "\\$1");
     const artistsList = [];
 
     request.addEventListener('readystatechange', function() {
@@ -17,14 +17,13 @@ export const getArtistsByName = (query, offset, updateResult) => {
         };
     });
 
-    request.open("GET", "https://musicbrainz.org/ws/2/artist/?query=artist:" + escapedQuery + "* OR artistaccent:" + escapedQuery + "*&fmt=json&limit=100&offset=" + offset, true);
+    request.open("GET", "https://musicbrainz.org/ws/2/artist/?query=artist:" + query + "*&fmt=json&limit=100&offset=" + offset, true);
     request.send();
-
 }
 
 export const getTitlesByName = (query, offset, updateResult) => {
     const request = new XMLHttpRequest();
-    const escapedQuery = query.replace(/([\!\*\+\&\|\(\)\[\]\{\}\^\~\?\:\"])/g, "\\$1");
+    query = query.replace(/([\!\*\+\&\|\(\)\[\]\{\}\^\~\?\:\"])/g, "\\$1");
 
     request.addEventListener('readystatechange', function() {
         if (request.readyState === XMLHttpRequest.DONE && request.status === 200) {
@@ -40,13 +39,13 @@ export const getTitlesByName = (query, offset, updateResult) => {
             updateResult(titlesList, responsesNb, offset);
         };
     });
-    request.open("GET", "https://musicbrainz.org/ws/2/recording/?query=recording:"+escapedQuery+"*&fmt=json&limit=100&offset=" + offset, true);
+    request.open("GET", "https://musicbrainz.org/ws/2/recording/?query=recording:"+query+"*&fmt=json&limit=100&offset=" + offset, true);
     request.send();
 }
 
 export const getReleasesByName = (query, offset, updateResult) => {
     const request = new XMLHttpRequest();
-    const escapedQuery = query.replace(/([\!\*\+\&\|\(\)\[\]\{\}\^\~\?\:\"])/g, "\\$1");
+    query = query.replace(/([\!\*\+\&\|\(\)\[\]\{\}\^\~\?\:\"])/g, "\\$1");
 
     request.addEventListener('readystatechange', function() {
         if (request.readyState === XMLHttpRequest.DONE && request.status === 200) {
@@ -62,10 +61,31 @@ export const getReleasesByName = (query, offset, updateResult) => {
             updateResult(albumsList, responsesNb, offset);
         };
     });
-    request.open("GET", "http://musicbrainz.org/ws/2/release/?query=release:"+escapedQuery+"*&fmt=json&limit=100&offset=" + offset, true);
+    request.open("GET", "http://musicbrainz.org/ws/2/release/?query=release:"+query+"*&fmt=json&limit=100&offset=" + offset, true);
     request.send();
 }
 
 export const getAllByName = (query, offset, updateResult) => {
 
+}
+
+export const getTitlesByQueryId = (queryId, queryField, offset, updateResult) => {
+    const request = new XMLHttpRequest();
+
+    request.addEventListener('readystatechange', function() {
+        if (request.readyState === XMLHttpRequest.DONE && request.status === 200) {
+            const responsesNb = JSON.parse(request.responseText).count;
+            const allTitles = JSON.parse(request.responseText).recordings;
+
+            // formattage du résultat -> [{"id" : identifiant unique, "name" : nom de l'album...}]
+            const titlesList = [];
+            for(let recording of allTitles) {
+                titlesList.push({"id": recording.id, "name": recording.title});
+            };
+
+            updateResult(titlesList, responsesNb, offset);
+        };
+    });
+    request.open("GET", "http://musicbrainz.org/ws/2/recording/?"+queryField+"="+queryId+"&fmt=json&limit=100&offset=" + offset, true);
+    request.send();
 }

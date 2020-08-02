@@ -13,17 +13,13 @@ class SearchForm extends React.Component {
         //this.queryToken = "";
         this.queryId = "";
         this.intIds = [];
-        this.nbSuccessRequests = 0;
-        this.responsesNb = 0;
     }
 
     sendRequest = (queryField, query, offset, callback) => {
         switch(queryField) {
             case 'all' :
                 // moyennement convaincue : les résultats vont potentiellement contenir 100 artistes puis 100 albums, etc..
-                getArtistsByName(query, offset, callback);
-                getReleasesByName(query, offset, callback);
-                getTitlesByName(query, offset, callback);
+
                 break;
             case 'artist' :
                 getArtistsByName(query, offset, callback);
@@ -48,27 +44,35 @@ class SearchForm extends React.Component {
 
             //this.queryToken = Math.random().toString(36).substr(2) + Math.random().toString(36).substr(2);
 
+            // annuler les requetes liées à l'ancienne valeur de l'input
             for(let intId of this.intIds) {
                 clearTimeout(intId);
             }
             this.intIds = [];
 
+            // si champ non vide, envoyer la première requete pour mettre à jour en temps réel le menu déroulant
             if(query !== "") {
                 this.sendRequest(queryField, query, 0, this.updateResult);
             }
         }
     }
 
-    updateFinalQuery = (query) => {
+    updateFinalQuery = (query, action) => {
         this.setState({
             "query" : query !== null ? query : "",
         });
-        this.queryId = query !== null ? query : "";
+        this.queryId = query !== null ? query.value : "";
 
+        // annuler les requetes liées à l'ancienne valeur de l'input
         for(let intId of this.intIds) {
             clearTimeout(intId);
         }
         this.intIds = [];
+
+        // si champ vidé, l'indiquer dans resultContainer
+        if(action.action === "clear") {
+            this.props.updateResultContainer(this.queryId);
+        }
     }
 
     /*keepInputValue = (ev) => {
@@ -83,7 +87,18 @@ class SearchForm extends React.Component {
         if(ev.target.value !== this.state.query) {
             this.setState({
                 "query" : "",
+                "result" : [],
             });
+
+            // annuler les requetes liées à l'ancienne valeur de l'input
+            for(let intId of this.intIds) {
+                clearTimeout(intId);
+            }
+            this.intIds = [];
+
+            // Indiquer dans resultContainer qu'aucune recherche n'est en cours
+            this.queryId = "";
+            this.props.updateResultContainer(this.queryId);
         }
     }
 
@@ -95,11 +110,13 @@ class SearchForm extends React.Component {
             "result" : [],
         });
 
+        // annuler les requetes liées à l'ancienne valeur de l'input
         for(let intId of this.intIds) {
             clearTimeout(intId);
         }
         this.intIds = [];
 
+        // envoyer la première requete pour mettre à jour en temps réel le menu déroulant
         this.sendRequest(queryField.value, query, 0, this.updateResult);
     }
 
@@ -112,17 +129,17 @@ class SearchForm extends React.Component {
             "result" : result
         });
 
-        this.nbSuccessRequests ++; //penser à reinitialiser au changement de requete
+        //this.nbSuccessRequests ++; //penser à reinitialiser au changement de requete
 
         const {query, queryField} = this.state;
 
-        if(queryField === "all" && this.nbSuccessRequests <= 3) {
+        /*if(queryField === "all" && this.nbSuccessRequests <= 3) {
             this.responsesNb += responsesNb;
         } else if(queryField !== "all") {
             this.responsesNb = responsesNb;
-        }
+        }*/
         // pb ici, les requetes sont envoyées plusieurs fois...
-        if(result.length < this.responsesNb && typeof query == "string" && (queryField !== "all" || this.nbSuccessRequests % 3 !== 0)) {
+        if(result.length < responsesNb && typeof query == "string") { //&& (queryField !== "all" || this.nbSuccessRequests % 3 !== 0)) {
             const intId = setTimeout(() => {
                 offset += 100;
                 this.sendRequest(queryField, query, offset, this.updateResult);
@@ -139,11 +156,10 @@ class SearchForm extends React.Component {
 
     submit = (ev) => {
         ev.preventDefault();
-        console.log(this.queryId);
+        this.props.updateResultContainer(this.queryId);
     }
 
     render() {
-
         // Select dropdown options
         const selectOptions = [
                 {value : 'all' , label : 'Tous les champs'},
