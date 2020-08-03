@@ -1,6 +1,6 @@
 import React from 'react';
 import ResultItem from "./ResultItem";
-import {getTitlesByQueryId} from "../api/musicAPI";
+import {getTitlesResult} from "../api/musicAPI";
 
 class ResultContainer extends React.Component {
     constructor(props) {
@@ -12,7 +12,6 @@ class ResultContainer extends React.Component {
     }
 
     updateResults = (results) => {
-        console.log('ici');
         this.setState({
             "results" : results,
             "isLoaded" : true,
@@ -20,9 +19,7 @@ class ResultContainer extends React.Component {
     }
 
     componentDidMount() {
-        console.log(this.props.queryId);
-        console.log(this.state.isLoaded);
-        getTitlesByQueryId(this.props.queryId, 0, this.updateResults);
+        getTitlesResult(this.props.query, this.props.queryField, 0, this.updateResults);
     }
 
     render(){

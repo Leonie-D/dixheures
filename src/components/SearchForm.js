@@ -1,5 +1,5 @@
 import React from 'react';
-import {getArtistsByName, getTitlesByName, getReleasesByName, getAllByName} from "../api/musicAPI";
+import {getSearchByName} from "../api/musicAPI";
 import Select from 'react-select';
 
 class SearchForm extends React.Component {
@@ -16,21 +16,19 @@ class SearchForm extends React.Component {
     }
 
     sendRequest = (queryField, query, offset, callback) => {
-        switch(queryField) {
-            case 'all' :
-                // moyennement convaincue : les résultats vont potentiellement contenir 100 artistes puis 100 albums, etc..
+        if(query !== "") {
+            switch(queryField) {
+                case 'all' :
+                    // moyennement convaincue : les résultats vont potentiellement contenir 100 artistes puis 100 releases, etc..
 
-                break;
-            case 'artist' :
-                getArtistsByName(query, offset, callback);
-                break;
-            case 'album' :
-                getReleasesByName(query, offset, callback);
-                break;
-            case 'title' :
-                getTitlesByName(query, offset, callback);
-                break;
-        };
+                    break;
+                case 'artist' :
+                case 'release' :
+                case 'recording' :
+                    getSearchByName(query, queryField, offset, callback);
+                    break;
+            };
+        }
     }
 
     updateQuery = (query, action) => {
@@ -71,7 +69,7 @@ class SearchForm extends React.Component {
 
         // si champ vidé, l'indiquer dans resultContainer
         if(action.action === "clear") {
-            this.props.updateResultContainer(this.queryId);
+            this.props.updateResultContainer(this.queryId, this.state.queryField);
         }
     }
 
@@ -98,7 +96,7 @@ class SearchForm extends React.Component {
 
             // Indiquer dans resultContainer qu'aucune recherche n'est en cours
             this.queryId = "";
-            this.props.updateResultContainer(this.queryId);
+            this.props.updateResultContainer(this.queryId, this.state.queryField);
         }
     }
 
@@ -156,7 +154,13 @@ class SearchForm extends React.Component {
 
     submit = (ev) => {
         ev.preventDefault();
-        this.props.updateResultContainer(this.queryId);
+
+        const {query, queryField} = this.state;
+        if(queryField === "recording") {
+            this.props.updateResultContainer(query.label, queryField);
+        } else {
+            this.props.updateResultContainer(this.queryId, this.state.queryField);
+        }
     }
 
     render() {
@@ -164,8 +168,8 @@ class SearchForm extends React.Component {
         const selectOptions = [
                 {value : 'all' , label : 'Tous les champs'},
                 {value : 'artist' , label : 'Artiste'},
-                {value : 'title' , label : 'Titre'},
-                {value :'album' , label : 'Album'}
+                {value : 'recording' , label : 'Titre'},
+                {value :'release' , label : 'Album'}
         ];
 
         const {query, result, queryField} = this.state;

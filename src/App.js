@@ -9,31 +9,34 @@ class App extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            "queryId" : ""
+            "query" : "",
+            "queryField" : "",
         }
     }
 
-    updateResultContainer = (queryId) => {
-        if(queryId !== "") {
+    updateResultContainer = (query, queryField) => {
+        if(query !== "") {
             this.setState({
-                "queryId" : queryId
+                "query" : query,
+                "queryField" : queryField,
             });
         } else {
             this.setState({
-                "queryId" : ""
+                "query" : "",
+                "queryField" : "",
             });
         }
     }
 
     render() {
-        const {queryId} = this.state;
+        const {query, queryField} = this.state;
 
         return (
             <div className="App">
                 <Header />
                 <main>
                     <SearchForm updateResultContainer={this.updateResultContainer} />
-                    {queryId === "" ? <p>Que puis-je faire pour toi ?</p> : <ResultContainer queryId={queryId} />}
+                    {query === "" ? <p>Que puis-je faire pour toi ?</p> : <ResultContainer query={query} queryField={queryField} />}
                 </main>
                 <Footer />
             </div>
