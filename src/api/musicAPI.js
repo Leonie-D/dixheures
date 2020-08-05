@@ -30,7 +30,7 @@ export const getAllByName = (query, offset, updateResult) => {
 
 }
 
-export const getTitlesResult = (query, queryField, offset, updateResult) => {
+export const getDetailledFromRecording = (query, offset, updateResult) => {
     const request = new XMLHttpRequest();
 
     request.addEventListener('readystatechange', function() {
@@ -41,17 +41,51 @@ export const getTitlesResult = (query, queryField, offset, updateResult) => {
             // formattage du résultat -> [{"id" : identifiant unique, "name" : nom de l'album...}]
             const titlesList = [];
             for(let recording of allTitles) {
-                titlesList.push({"id": recording.id, "name": recording.title});
+                const albums = typeof recording.releases !== "undefined" ? recording.releases.map( x=> x.title) : ["unknown album"];
+                for(let album of albums) {
+                    titlesList.push({"id": recording.id, "titre": recording.title, "artiste" : recording['artist-credit'][0].name, "album" : album});
+                }
             };
 
             updateResult(titlesList, responsesNb, offset);
         };
     });
 
-    if(queryField === "recording") {
-        request.open("GET", "https://musicbrainz.org/ws/2/" + queryField + "/?query=" + queryField + ":" + query + "*&fmt=json&limit=100&offset=" + offset, true);
-    } else {
-        request.open("GET", "http://musicbrainz.org/ws/2/recording/?"+queryField+"="+query+"&fmt=json&limit=100&offset=" + offset, true);
-    }
+    request.open("GET", "https://musicbrainz.org/ws/2/recording/?query=recording:" + query + "*&fmt=json&limit=100&offset=" + offset, true);
     request.send();
+}
+
+export const getDetailledFromArtist = (query, offset, updateResult) => {
+    const request = new XMLHttpRequest();
+
+    request.addEventListener('readystatechange', function() {
+        if (request.readyState === XMLHttpRequest.DONE && request.status === 200) {
+            const responsesNb = JSON.parse(request.responseText)['recording-count'];
+            const allTitles = JSON.parse(request.responseText).recordings;
+
+            console.log(responsesNb);
+            console.log(allTitles);
+
+            // formattage du résultat -> [{"id" : identifiant unique, "name" : nom de l'album...}]
+            const titlesList = [];
+            //envoyer un requete supplémentaire pour récupérer l'album...
+            /*for(let recording of allTitles) {
+                const secondRequest = new XMLHttpRequest();
+                secondRequest.addEventListener('readystatechange', function() {
+                    if (secondRequest.readyState === XMLHttpRequest.DONE && secondRequest.status === 200) {
+                        console.log(JSON.parse(request.responseText));
+                    }
+                });
+                secondRequest.open("GET", "http://musicbrainz.org/ws/2/release/?recordings:"+recording.id+"&fmt=json", true);
+                secondRequest.send();
+            }*/
+            }
+        });
+
+    request.open("GET", "http://musicbrainz.org/ws/2/recording/?artist="+query+"&fmt=json&limit=100&offset=" + offset, true);
+    request.send();
+}
+
+export const getDetailledFromRelease = (query, offset, updateResult) => {
+    //
 }
