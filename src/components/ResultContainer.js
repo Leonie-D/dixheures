@@ -12,16 +12,17 @@ class ResultContainer extends React.Component {
         this.intIds = [];
     }
 
-    sendRequest = (offset, callback) => {
-        switch(this.props.queryField) {
+    sendRequest = (offset) => {
+        const {query, queryField} = this.props;
+        switch(queryField) {
             case 'artist' :
-                getDetailledFromArtist(this.props.query, offset, this.updateResults);
+                getDetailledFromArtist(query.value, offset, this.updateResults);
                 break;
             case 'release' :
-                getDetailledFromRelease(this.props.query, offset, this.updateResults);
+                getDetailledFromRelease(query, offset, this.updateResults);
                 break;
             case 'recording' :
-                getDetailledFromRecording(this.props.query, offset, this.updateResults);
+                getDetailledFromRecording(query.label, offset, this.updateResults);
                 break;
         };
     }
@@ -33,19 +34,17 @@ class ResultContainer extends React.Component {
             "isLoaded" : true,
         });
 
-        console.log(result);
-
         if(result.length < responsesNb) {
             const intId = setTimeout(() => {
                 offset += 100;
-                this.sendRequest(offset, this.updateResults);
+                this.sendRequest(offset);
             }, 2000);
             this.intIds = [...this.intIds, intId];
         }
     }
 
     componentDidMount() {
-        this.sendRequest(0, this.updateResults);
+        this.sendRequest(0);
     }
 
     componentWillUnmount() {
@@ -72,7 +71,7 @@ class ResultContainer extends React.Component {
                             </tr>
                         </thead>
                         <tbody>
-                           {result.map((r, index) => <ResultItem key={index} id={r.id} titre={r.titre} artiste={r.artiste} album={r.album} />)}
+                           {result.map((r, index) => <ResultItem key={index} id={r.id} rang={index} titre={r.titre} artiste={r.artiste} album={r.album} />)}
                         </tbody>
                     </div>
                     :

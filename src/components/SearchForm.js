@@ -15,7 +15,7 @@ class SearchForm extends React.Component {
         this.intIds = [];
     }
 
-    sendRequest = (queryField, query, offset, callback) => {
+    sendRequest = (queryField, query, offset) => {
         if(query !== "") {
             switch(queryField) {
                 case 'all' :
@@ -25,7 +25,7 @@ class SearchForm extends React.Component {
                 case 'artist' :
                 case 'release' :
                 case 'recording' :
-                    getSearchByName(query, queryField, offset, callback);
+                    getSearchByName(query, queryField, offset, this.updateResult);
                     break;
             };
         }
@@ -50,7 +50,7 @@ class SearchForm extends React.Component {
 
             // si champ non vide, envoyer la première requete pour mettre à jour en temps réel le menu déroulant
             if(query !== "") {
-                this.sendRequest(queryField, query, 0, this.updateResult);
+                this.sendRequest(queryField, query, 0);
             }
         }
     }
@@ -115,7 +115,7 @@ class SearchForm extends React.Component {
         this.intIds = [];
 
         // envoyer la première requete pour mettre à jour en temps réel le menu déroulant
-        this.sendRequest(queryField.value, query, 0, this.updateResult);
+        this.sendRequest(queryField.value, query, 0);
     }
 
     updateResult = (result, responsesNb, offset) => {
@@ -140,7 +140,7 @@ class SearchForm extends React.Component {
         if(result.length < responsesNb && typeof query == "string") { //&& (queryField !== "all" || this.nbSuccessRequests % 3 !== 0)) {
             const intId = setTimeout(() => {
                 offset += 100;
-                this.sendRequest(queryField, query, offset, this.updateResult);
+                this.sendRequest(queryField, query, offset);
             }, 2000);
             this.intIds = [...this.intIds, intId];
         }
@@ -156,11 +156,7 @@ class SearchForm extends React.Component {
         ev.preventDefault();
 
         const {query, queryField} = this.state;
-        if(queryField === "recording") {
-            this.props.updateResultContainer(query.label, queryField);
-        } else {
-            this.props.updateResultContainer(this.queryId, this.state.queryField);
-        }
+        this.props.updateResultContainer(query, queryField);
     }
 
     render() {
