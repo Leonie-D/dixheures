@@ -63,26 +63,30 @@ export const getDetailledFromArtist = (query, offset, updateResult) => {
             const responsesNb = JSON.parse(request.responseText)['recording-count'];
             const allTitles = JSON.parse(request.responseText).recordings;
 
-            console.log(responsesNb);
-            console.log(allTitles);
-
             // formattage du résultat
             const titlesList = [];
-            for(let recording of allTitles) {
-                const artists = typeof recording['artist-credit'] !== "undefined" ? recording['artist-credit'].map(x => x.name).join(', ') : "unknown artist";
-
-                //envoyer un requete supplémentaire pour récupérer l'album...
-                const secondRequest = new XMLHttpRequest();
-                secondRequest.addEventListener('readystatechange', function() {
-                    if (secondRequest.readyState === XMLHttpRequest.DONE && secondRequest.status === 200) {
-                        console.log(JSON.parse(request.responseText));
-                    }
-                });
-
+            for(let [i, recording] of allTitles.entries()) {
                 const intId = setTimeout(() => {
-                    secondRequest.open("GET", "http://musicbrainz.org/ws/2/release?recordings=" + recording.id + "&fmt=json", true);
+                    const artists = typeof recording['artist-credit'] !== "undefined" ? recording['artist-credit'].map(x => x.name).join(', ') : "unknown artist";
+
+                    //envoyer un requete supplémentaire pour récupérer les albums...
+                    // idéalement, il faudrait améliorer pour le cas où le nombre d'albums > 100...
+                    const secondRequest = new XMLHttpRequest();
+                    secondRequest.addEventListener('readystatechange', function() {
+                        if (secondRequest.readyState === XMLHttpRequest.DONE && secondRequest.status === 200) {
+                            const allReleases = JSON.parse(secondRequest.responseText);
+                            const albums = typeof allReleases.releases !== "undefined" ? allReleases.releases.map( x=> x.title) : ["unknown album"];
+                            for(let album of albums) {
+                                titlesList.push({"id": recording.id, "titre": recording.title, "artiste" : artists, "album" : album});
+                            }
+
+                            updateResult(titlesList, responsesNb, offset);
+                        }
+                    });
+
+                    secondRequest.open("GET", "http://musicbrainz.org/ws/2/release?recording=" + recording.id + "&fmt=json", true);
                     secondRequest.send();
-                }, 1500);
+                }, i * 2000);
             }
         }
     });
