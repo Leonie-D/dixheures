@@ -34,6 +34,8 @@ class ResultContainer extends React.Component {
             "isLoaded" : true,
         });
 
+        console.log(result);
+
         if(result.length < responsesNb) {
             const intId = setTimeout(() => {
                 offset += 100;
@@ -57,22 +59,25 @@ class ResultContainer extends React.Component {
         const {result, isLoaded} = this.state;
 
         return(
-            <div>
+            <div className="resultContainer">
                 {isLoaded ?
                     <div>
-                        <h2>Voici tout ce que j'ai trouvé</h2>
-                        <thead>
-                            <tr>
-                                <th>N°</th>
-                                <th>Titre</th>
-                                <th>Artiste</th>
-                                <th>Album</th>
-                                <th>En savoir plus</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                           {result.map((r, index) => <ResultItem key={index} id={r.id} rang={index} titre={r.titre} artiste={r.artiste} album={r.album} />)}
-                        </tbody>
+                        <p>{result.length > 1 ? result.length + " résultats" : result.length + " résultat"}</p>
+                        <table>
+                            <h2>Voici tout ce que j'ai trouvé</h2>
+                            <thead>
+                                <tr>
+                                    <th>N°</th>
+                                    <th>Titre</th>
+                                    <th>Artiste</th>
+                                    <th>Album</th>
+                                    <th>En savoir plus</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                               {result.map((r, index) => <ResultItem key={index} id={r.id} rang={index} titre={r.titre} artiste={r.artiste} album={r.album} openModal={this.props.openModal} genres={r.genres} rating={r.rating} />)}
+                            </tbody>
+                        </table>
                     </div>
                     :
                     <p>Chargement...</p>

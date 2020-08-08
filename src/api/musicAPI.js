@@ -40,14 +40,35 @@ export const getDetailledFromRecording = (query, offset, updateResult) => {
 
             // formattage du résultat
             const titlesList = [];
-            for(let recording of allTitles) {
-                const albums = typeof recording.releases !== "undefined" ? recording.releases.map( x=> x.title) : ["unknown album"];
-                for(let album of albums) {
-                    titlesList.push({"id": recording.id, "titre": recording.title, "artiste" : recording['artist-credit'][0].name, "album" : album});
-                }
-            };
+            for(let [i, recording] of allTitles.entries()) {
+                const intId = setTimeout(() => {
+                    const albums = typeof recording.releases !== "undefined" ? recording.releases.map(x => x.title) : ["unknown album"];
 
-            updateResult(titlesList, responsesNb, offset);
+                    const secondRequest = new XMLHttpRequest();
+                    secondRequest.addEventListener('readystatechange', function () {
+                        if (secondRequest.readyState === XMLHttpRequest.DONE && secondRequest.status === 200) {
+                            const response = JSON.parse(secondRequest.responseText);
+                            const genres = response.genres.length > 0 ? response.genres.map(x => x.name).join(', ') : '-';
+                            const rating = response.rating['votes-count'] > 0 ? response.rating.value : '-';
+
+                            for (let album of albums) {
+                                titlesList.push({
+                                    "id": recording.id,
+                                    "titre": recording.title,
+                                    "artiste": recording['artist-credit'][0].name,
+                                    "album": album,
+                                    "rating" : rating,
+                                    "genres" : genres,
+                                });
+                            }
+
+                            updateResult(titlesList, responsesNb, offset);
+                        }
+                    });
+                    secondRequest.open("GET", "https://musicbrainz.org/ws/2/recording/" + recording.id + "/?&inc=genres+ratings&fmt=json&limit=100&offset=" + offset, true);
+                    secondRequest.send();
+                }, i * 2000);
+            }
         };
     });
 
@@ -68,6 +89,8 @@ export const getDetailledFromArtist = (query, offset, updateResult) => {
             for(let [i, recording] of allTitles.entries()) {
                 const intId = setTimeout(() => {
                     const artists = typeof recording['artist-credit'] !== "undefined" ? recording['artist-credit'].map(x => x.name).join(', ') : "unknown artist";
+                    const rating = recording.rating['votes-count'] > 0 ? recording.rating.value : '-';
+                    const genres = recording.genres.length > 0 ? recording.genres.map(x => x.name).join(', ') : '-';
 
                     //envoyer un requete supplémentaire pour récupérer les albums...
                     // idéalement, il faudrait améliorer pour le cas où le nombre d'albums > 100...
@@ -77,7 +100,13 @@ export const getDetailledFromArtist = (query, offset, updateResult) => {
                             const allReleases = JSON.parse(secondRequest.responseText);
                             const albums = typeof allReleases.releases !== "undefined" ? allReleases.releases.map( x=> x.title) : ["unknown album"];
                             for(let album of albums) {
-                                titlesList.push({"id": recording.id, "titre": recording.title, "artiste" : artists, "album" : album});
+                                titlesList.push({
+                                    "id": recording.id,
+                                    "titre": recording.title,
+                                    "artiste" : artists,
+                                    "album" : album,
+                                    "genres" : genres,
+                                    "rating" : rating});
                             }
 
                             updateResult(titlesList, responsesNb, offset);
@@ -91,7 +120,7 @@ export const getDetailledFromArtist = (query, offset, updateResult) => {
         }
     });
 
-    request.open("GET", "http://musicbrainz.org/ws/2/recording/?artist="+query+"&inc=artist-credits&fmt=json&limit=100&offset=" + offset, true);
+    request.open("GET", "http://musicbrainz.org/ws/2/recording/?artist="+query+"&inc=ratings+genres+artist-credits&fmt=json&limit=100&offset=" + offset, true);
     request.send();
 }
 
@@ -107,12 +136,20 @@ export const getDetailledFromRelease = (query, offset, updateResult) => {
             const titlesList = [];
             for(let recording of allTitles) {
                 const artists = typeof recording['artist-credit'] !== "undefined" ? recording['artist-credit'].map(x => x.name).join(', ') : "unknown artist";
-                titlesList.push({"id": recording.id, "titre": recording.title, "artiste" : artists, "album" : query.label});
+                const rating = recording.rating['votes-count'] > 0 ? recording.rating.value : '-';
+                const genres = recording.genres.length > 0 ? recording.genres.map(x => x.name).join(', ') : '-';
+                titlesList.push({
+                    "id": recording.id,
+                    "titre": recording.title,
+                    "artiste" : artists,
+                    "album" : query.label,
+                    "genres" : genres,
+                    "rating" : rating});
             };
             updateResult(titlesList, responsesNb, offset);
         }
     });
 
-    request.open("GET", "http://musicbrainz.org/ws/2/recording/?release="+query.value+"&fmt=json&inc=artist-credits&limit=100&offset=" + offset, true);
+    request.open("GET", "http://musicbrainz.org/ws/2/recording/?release="+query.value+"&fmt=json&inc=ratings+genres+artist-credits&limit=100&offset=" + offset, true);
     request.send();
 }

@@ -1,8 +1,13 @@
 import React from 'react';
 
 class ResultItem extends React.Component {
+    openInfoModal = () => {
+        const {id, titre, artiste, album, openModal, genres, rating} = this.props;
+        openModal(id, titre, artiste, album, genres, rating);
+    }
+
     render() {
-        const {id, rang, titre, artiste, album} = this.props;
+        const {rang, titre, artiste, album} = this.props;
         return (
             <tr>
                 <td>{rang}</td>
@@ -10,7 +15,7 @@ class ResultItem extends React.Component {
                 <td>{artiste}</td>
                 <td>{album}</td>
                 <td>
-                    <button id={id}> + </button>
+                    <button onClick={this.openInfoModal}> + </button>
                 </td>
             </tr>
         );
