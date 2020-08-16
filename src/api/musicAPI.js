@@ -5,7 +5,7 @@ export const getSearchByName = (query, queryField, offset, updateResult) => {
     const key = queryField+"s";
 
     request.addEventListener('readystatechange', function() {
-        if (request.readyState === XMLHttpRequest.DONE && request.status === 200) { // et statut 304 ?
+        if (request.readyState === XMLHttpRequest.DONE && (request.status === 200 || request.status === 304)) {
             const responsesNb = JSON.parse(request.responseText).count;
             const allResults = JSON.parse(request.responseText)[key];
 
@@ -30,45 +30,50 @@ export const getAllByName = (query, offset, updateResult) => {
 
 }
 
-export const getDetailledFromRecording = (query, offset, updateResult) => {
+export const getDetailledFromRecording = (query, offset, updateResult, getNextResults) => {
     const request = new XMLHttpRequest();
 
     request.addEventListener('readystatechange', function() {
-        if (request.readyState === XMLHttpRequest.DONE && request.status === 200) {
+        if (request.readyState === XMLHttpRequest.DONE && (request.status === 200 || request.status === 304)) {
             const responsesNb = JSON.parse(request.responseText).count;
             const allTitles = JSON.parse(request.responseText).recordings;
 
             // formattage du résultat
-            const titlesList = [];
             for(let [i, recording] of allTitles.entries()) {
                 const intId = setTimeout(() => {
-                    const albums = typeof recording.releases !== "undefined" ? recording.releases.map(x => x.title) : ["unknown album"];
+                    const albums = typeof recording.releases !== "undefined" ? recording.releases.map(x => [x.title, x.id]) : ["unknown album"];
 
                     const secondRequest = new XMLHttpRequest();
                     secondRequest.addEventListener('readystatechange', function () {
-                        if (secondRequest.readyState === XMLHttpRequest.DONE && secondRequest.status === 200) {
+                        if (secondRequest.readyState === XMLHttpRequest.DONE && (secondRequest.status === 200 || secondRequest.status === 304)) {
                             const response = JSON.parse(secondRequest.responseText);
                             const genres = response.genres.length > 0 ? response.genres.map(x => x.name).join(', ') : '-';
                             const rating = response.rating['votes-count'] > 0 ? response.rating.value : '-';
 
+                            const titlesList = [];
                             for (let album of albums) {
                                 titlesList.push({
                                     "id": recording.id,
                                     "titre": recording.title,
                                     "artiste": recording['artist-credit'][0].name,
-                                    "album": album,
+                                    "album": album[0],
+                                    "albumId" : album[1],
                                     "rating" : rating,
                                     "genres" : genres,
+                                    "duree" : response.length !== null ? response.length : "-",
                                 });
                             }
 
-                            updateResult(titlesList, responsesNb, offset);
+                            updateResult(titlesList);
+                            clearTimeout(intId);
                         }
                     });
                     secondRequest.open("GET", "https://musicbrainz.org/ws/2/recording/" + recording.id + "/?&inc=genres+ratings&fmt=json&limit=100&offset=" + offset, true);
                     secondRequest.send();
-                }, i * 2000);
+                }, i * 1000);
             }
+
+            getNextResults(responsesNb, offset);
         };
     });
 
@@ -76,16 +81,15 @@ export const getDetailledFromRecording = (query, offset, updateResult) => {
     request.send();
 }
 
-export const getDetailledFromArtist = (query, offset, updateResult) => {
+export const getDetailledFromArtist = (query, offset, updateResult, getNextResults) => {
     const request = new XMLHttpRequest();
 
     request.addEventListener('readystatechange', function() {
-        if (request.readyState === XMLHttpRequest.DONE && request.status === 200) {
+        if (request.readyState === XMLHttpRequest.DONE && (request.status === 200 || request.status === 304)) {
             const responsesNb = JSON.parse(request.responseText)['recording-count'];
             const allTitles = JSON.parse(request.responseText).recordings;
 
             // formattage du résultat
-            const titlesList = [];
             for(let [i, recording] of allTitles.entries()) {
                 const intId = setTimeout(() => {
                     const artists = typeof recording['artist-credit'] !== "undefined" ? recording['artist-credit'].map(x => x.name).join(', ') : "unknown artist";
@@ -96,27 +100,34 @@ export const getDetailledFromArtist = (query, offset, updateResult) => {
                     // idéalement, il faudrait améliorer pour le cas où le nombre d'albums > 100...
                     const secondRequest = new XMLHttpRequest();
                     secondRequest.addEventListener('readystatechange', function() {
-                        if (secondRequest.readyState === XMLHttpRequest.DONE && secondRequest.status === 200) {
+                        if (secondRequest.readyState === XMLHttpRequest.DONE && (secondRequest.status === 200 || secondRequest.status === 304)) {
                             const allReleases = JSON.parse(secondRequest.responseText);
-                            const albums = typeof allReleases.releases !== "undefined" ? allReleases.releases.map( x=> x.title) : ["unknown album"];
+                            const albums = typeof allReleases.releases !== "undefined" ? allReleases.releases.map( x => [x.title, x.id]) : ["unknown album"];
+
+                            const titlesList = [];
                             for(let album of albums) {
                                 titlesList.push({
                                     "id": recording.id,
                                     "titre": recording.title,
                                     "artiste" : artists,
-                                    "album" : album,
+                                    "album" : album[0],
+                                    "albumId" : album[1],
                                     "genres" : genres,
-                                    "rating" : rating});
+                                    "rating" : rating,
+                                    "duree" : recording.length !== null ? recording.length : "-",
+                                });
                             }
 
-                            updateResult(titlesList, responsesNb, offset);
+                            updateResult(titlesList);
+                            clearTimeout(intId);
                         }
                     });
 
                     secondRequest.open("GET", "http://musicbrainz.org/ws/2/release?recording=" + recording.id + "&fmt=json", true);
                     secondRequest.send();
-                }, i * 2000);
+                }, i * 1000);
             }
+            getNextResults(responsesNb, offset);
         }
     });
 
@@ -124,11 +135,11 @@ export const getDetailledFromArtist = (query, offset, updateResult) => {
     request.send();
 }
 
-export const getDetailledFromRelease = (query, offset, updateResult) => {
+export const getDetailledFromRelease = (query, offset, updateResult, getNextResults) => {
     const request = new XMLHttpRequest();
 
     request.addEventListener('readystatechange', function() {
-        if (request.readyState === XMLHttpRequest.DONE && request.status === 200) {
+        if (request.readyState === XMLHttpRequest.DONE && (request.status === 200 || request.status === 304)) {
             const responsesNb = JSON.parse(request.responseText)['recording-count'];
             const allTitles = JSON.parse(request.responseText).recordings;
 
@@ -143,13 +154,35 @@ export const getDetailledFromRelease = (query, offset, updateResult) => {
                     "titre": recording.title,
                     "artiste" : artists,
                     "album" : query.label,
+                    "albumId" : query.value,
                     "genres" : genres,
-                    "rating" : rating});
+                    "rating" : rating,
+                    "duree" : recording.length !== null ? recording.length : "-",
+                });
             };
-            updateResult(titlesList, responsesNb, offset);
+            console.log(titlesList);
+            updateResult(titlesList);
+            getNextResults(responsesNb, offset);
         }
     });
 
     request.open("GET", "http://musicbrainz.org/ws/2/recording/?release="+query.value+"&fmt=json&inc=ratings+genres+artist-credits&limit=100&offset=" + offset, true);
+    request.send();
+}
+
+export const getPictures = (albumId, displayPictures) => {
+    const request = new XMLHttpRequest();
+
+    request.addEventListener('readystatechange', function() {
+        if (request.readyState === XMLHttpRequest.DONE && (request.status === 200 || request.status === 304)) {
+            const images = JSON.parse(request.responseText).images.map(x => x.image);
+            displayPictures(images);
+        }
+        if (request.readyState === XMLHttpRequest.DONE && request.status === 404) {
+            displayPictures([]);
+        }
+    });
+
+    request.open("GET", "http://coverartarchive.org/release/"+albumId, true);
     request.send();
 }

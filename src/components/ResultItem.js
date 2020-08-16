@@ -2,8 +2,8 @@ import React from 'react';
 
 class ResultItem extends React.Component {
     openInfoModal = () => {
-        const {id, titre, artiste, album, openModal, genres, rating} = this.props;
-        openModal(id, titre, artiste, album, genres, rating);
+        const {id, titre, artiste, album, albumId, openModal, genres, rating, duree} = this.props;
+        openModal(id, titre, artiste, album, albumId, genres, rating, duree);
     }
 
     render() {

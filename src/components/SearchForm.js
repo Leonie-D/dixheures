@@ -141,19 +141,18 @@ class SearchForm extends React.Component {
             const intId = setTimeout(() => {
                 offset += 100;
                 this.sendRequest(queryField, query, offset);
-            }, 2000);
+            }, 500);
             this.intIds = [...this.intIds, intId];
-        }
-    }
-
-    componentWillUnmount() {
-        for(let intId of this.intIds) {
-            clearTimeout(intId);
         }
     }
 
     submit = (ev) => {
         ev.preventDefault();
+
+        // stopper les requêtes précédentes visant à compléter le menu déroulant
+        for(let intId of this.intIds) {
+            clearTimeout(intId);
+        }
 
         const {query, queryField} = this.state;
         this.props.updateResultContainer(query, queryField);

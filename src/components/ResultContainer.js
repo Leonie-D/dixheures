@@ -16,31 +16,31 @@ class ResultContainer extends React.Component {
         const {query, queryField} = this.props;
         switch(queryField) {
             case 'artist' :
-                getDetailledFromArtist(query.value, offset, this.updateResults);
+                getDetailledFromArtist(query.value, offset, this.updateResults, this.getNextResults);
                 break;
             case 'release' :
-                getDetailledFromRelease(query, offset, this.updateResults);
+                getDetailledFromRelease(query, offset, this.updateResults, this.getNextResults);
                 break;
             case 'recording' :
-                getDetailledFromRecording(query.label, offset, this.updateResults);
+                getDetailledFromRecording(query.label, offset, this.updateResults, this.getNextResults);
                 break;
         };
     }
 
-    updateResults = (result, responsesNb, offset) => {
+    updateResults = (result) => {
         result = [...this.state.result, ...result];
         this.setState({
             "result" : result,
             "isLoaded" : true,
         });
+    }
 
-        console.log(result);
-
-        if(result.length < responsesNb) {
+    getNextResults = (responsesNb, offset) => {
+        if(offset+100 < responsesNb) {
             const intId = setTimeout(() => {
                 offset += 100;
                 this.sendRequest(offset);
-            }, 2000);
+            }, 100000);
             this.intIds = [...this.intIds, intId];
         }
     }
@@ -61,24 +61,27 @@ class ResultContainer extends React.Component {
         return(
             <div className="resultContainer">
                 {isLoaded ?
-                    <div>
-                        <p>{result.length > 1 ? result.length + " résultats" : result.length + " résultat"}</p>
-                        <table>
+                    result.length > 0 ?
+                        <div>
+                            <p>{result.length > 1 ? result.length + " résultats" : result.length + " résultat"}</p>
                             <h2>Voici tout ce que j'ai trouvé</h2>
-                            <thead>
-                                <tr>
-                                    <th>N°</th>
-                                    <th>Titre</th>
-                                    <th>Artiste</th>
-                                    <th>Album</th>
-                                    <th>En savoir plus</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                               {result.map((r, index) => <ResultItem key={index} id={r.id} rang={index} titre={r.titre} artiste={r.artiste} album={r.album} openModal={this.props.openModal} genres={r.genres} rating={r.rating} />)}
-                            </tbody>
-                        </table>
-                    </div>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>N°</th>
+                                        <th>Titre</th>
+                                        <th>Artiste</th>
+                                        <th>Album</th>
+                                        <th>En savoir plus</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                   {result.map((r, index) => <ResultItem key={index} id={r.id} rang={index} titre={r.titre} artiste={r.artiste} album={r.album} albumId={r.albumId} openModal={this.props.openModal} genres={r.genres} rating={r.rating} duree={r.duree} />)}
+                                </tbody>
+                            </table>
+                        </div>
+                        :
+                        <p>Aucun résultat</p>
                     :
                     <p>Chargement...</p>
                 }
