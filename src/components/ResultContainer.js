@@ -53,6 +53,7 @@ class ResultContainer extends React.Component {
         for(let intId of this.intIds) {
             clearTimeout(intId);
         }
+        this.intIds = [];
     }
 
     render(){
@@ -63,9 +64,11 @@ class ResultContainer extends React.Component {
                 {isLoaded ?
                     result.length > 0 ?
                         <div>
-                            <p>{result.length > 1 ? result.length + " résultats" : result.length + " résultat"}</p>
-                            <h2>Voici tout ce que j'ai trouvé</h2>
-                            <table>
+                            <div className="table-header">
+                                <h2>Voici tout ce que j'ai trouvé</h2>
+                                <p>{result.length > 1 ? "- " + result.length + " résultats" : "- " + result.length + " résultat"}</p>
+                            </div>
+                            <table className="resultats">
                                 <thead>
                                     <tr>
                                         <th>N°</th>

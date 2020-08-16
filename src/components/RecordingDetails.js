@@ -22,26 +22,27 @@ class RecordingDetails extends React.Component {
 
         return (
             <Modal
+                className="recording-details"
                 isOpen={this.props.modalIsOpen}
                 onRequestClose={this.props.closeModal}
                 style={customStyles}
                 contentLabel="Example Modal"
             >
-                <h2>{titre}</h2>
-                <ul>
-                    <li>artiste(s) : {artiste}</li>
-                    <li>album(s) : {album}</li>
-                    <li>genre(s) : {genres}</li>
-                    <li>durée : {~~(duree/60000) + ":" + Math.round((duree%60000)/1000)}</li>
-                    <li>note : {rating === '-' ? rating : rating + "/5"}</li>
-                    <li>
-                        galerie :
-                        <div className="galerie">
-                            {imagesAreLoaded ? (images.length > 0 ? images.map((url, index) => <img key={index} src={url}/>) : <p>Aucune image disponible</p>) : <p>Chargement...</p>}
-                        </div>
-                    </li>
+                <header>
+                    <h2>{titre}</h2>
+                    <button onClick={this.props.closeModal}>Fermer</button>
+                </header>
+                <ul className="details">
+                    <li><strong>Artiste(s)</strong> : {artiste}</li>
+                    <li><strong>Album</strong> : {album}</li>
+                    <li><strong>Genre(s)</strong> : {genres}</li>
+                    <li><strong>Durée</strong> : {~~(duree/60000) + ":" + Math.round((duree%60000)/1000)}</li>
+                    <li><strong>Note</strong> : {rating === '-' ? rating : rating + "/5"}</li>
                 </ul>
-                <button onClick={this.props.closeModal}>Fermer</button>
+                <hr/>
+                <div className="galerie">
+                    {imagesAreLoaded ? (images.length > 0 ? images.map((url, index) => <img key={index} src={url}/>) : <p>Aucune image disponible</p>) : <p>Chargement...</p>}
+                </div>
             </Modal>
         );
     }

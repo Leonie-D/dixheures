@@ -41,6 +41,7 @@ class SearchForm extends React.Component {
             });
 
             //this.queryToken = Math.random().toString(36).substr(2) + Math.random().toString(36).substr(2);
+            // ou même penser à abort() les requetes pour ne pas avoir de retour du tout
 
             // annuler les requetes liées à l'ancienne valeur de l'input
             for(let intId of this.intIds) {

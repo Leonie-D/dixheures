@@ -175,7 +175,7 @@ export const getPictures = (albumId, displayPictures) => {
 
     request.addEventListener('readystatechange', function() {
         if (request.readyState === XMLHttpRequest.DONE && (request.status === 200 || request.status === 304)) {
-            const images = JSON.parse(request.responseText).images.map(x => x.image);
+            const images = JSON.parse(request.responseText).images.map(x => x.thumbnails.small);
             displayPictures(images);
         }
         if (request.readyState === XMLHttpRequest.DONE && request.status === 404) {
