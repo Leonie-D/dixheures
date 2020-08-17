@@ -32,6 +32,7 @@ export const getAllByName = (query, offset, updateResult) => {
 
 export const getDetailledFromRecording = (query, offset, updateResult, getNextResults) => {
     const request = new XMLHttpRequest();
+    query = query.replace(/([\!\*\+\&\|\(\)\[\]\{\}\^\~\?\:\"])/g, "\\$1");
 
     request.addEventListener('readystatechange', function() {
         if (request.readyState === XMLHttpRequest.DONE && (request.status === 200 || request.status === 304)) {
