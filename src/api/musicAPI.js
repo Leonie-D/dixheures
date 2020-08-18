@@ -9,7 +9,7 @@ export const getSearchByName = (query, queryField, offset, updateResult) => {
             const responsesNb = JSON.parse(request.responseText).count;
             const allResults = JSON.parse(request.responseText)[key];
 
-            // formattage du résultat -> [{"id" : identifiant unique, "name" : nom de l'artiste/titre/album...}]
+            // formattage du résultat -> [{"value" : identifiant unique, "label" : nom de l'artiste/titre/album...}]
             for(let result of allResults) {
                 if(queryField === "artist") {
                     resultList.push({"value": result.id, "label": result.name});
@@ -18,7 +18,7 @@ export const getSearchByName = (query, queryField, offset, updateResult) => {
                 }
             };
 
-            updateResult(resultList, responsesNb, offset); // récupère les résultats des requetes envoyées avant le changement de query...
+            updateResult(resultList, responsesNb, offset, queryField);
         };
     });
 
@@ -26,11 +26,7 @@ export const getSearchByName = (query, queryField, offset, updateResult) => {
     request.send();
 }
 
-export const getAllByName = (query, offset, updateResult) => {
-
-}
-
-export const getDetailledFromRecording = (query, offset, updateResult, getNextResults) => {
+export const getDetailledFromRecording = (query, offset, updateResult, getNextResults, token, continuer) => {
     const request = new XMLHttpRequest();
     query = query.replace(/([\!\*\+\&\|\(\)\[\]\{\}\^\~\?\:\"])/g, "\\$1");
 
@@ -42,39 +38,40 @@ export const getDetailledFromRecording = (query, offset, updateResult, getNextRe
             // formattage du résultat
             for(let [i, recording] of allTitles.entries()) {
                 const intId = setTimeout(() => {
-                    const albums = typeof recording.releases !== "undefined" ? recording.releases.map(x => [x.title, x.id]) : ["unknown album"];
+                    // vérifie si on continue ou si la requête a changé
+                    if(continuer(token)) {
+                        const albums = (typeof recording.releases !== "undefined" && recording.releases.length > 0) ? recording.releases.map( x => [x.title, x.id]) : [["Unknown album", ""]];
 
-                    const secondRequest = new XMLHttpRequest();
-                    secondRequest.addEventListener('readystatechange', function () {
-                        if (secondRequest.readyState === XMLHttpRequest.DONE && (secondRequest.status === 200 || secondRequest.status === 304)) {
-                            const response = JSON.parse(secondRequest.responseText);
-                            const genres = response.genres.length > 0 ? response.genres.map(x => x.name).join(', ') : '-';
-                            const rating = response.rating['votes-count'] > 0 ? response.rating.value : '-';
+                        const secondRequest = new XMLHttpRequest();
+                        secondRequest.addEventListener('readystatechange', function () {
+                            if (secondRequest.readyState === XMLHttpRequest.DONE && (secondRequest.status === 200 || secondRequest.status === 304)) {
+                                const response = JSON.parse(secondRequest.responseText);
+                                const genres = response.genres.length > 0 ? response.genres.map(x => x.name).join(', ') : '-';
+                                const rating = response.rating['votes-count'] > 0 ? response.rating.value : '-';
 
-                            const titlesList = [];
-                            for (let album of albums) {
-                                titlesList.push({
+                                const newTitle = {
                                     "id": recording.id,
                                     "titre": recording.title,
-                                    "artiste": recording['artist-credit'][0].name,
-                                    "album": album[0],
-                                    "albumId" : album[1],
+                                    "artistes": recording['artist-credit'][0].name,
+                                    "albums": albums,
                                     "rating" : rating,
                                     "genres" : genres,
                                     "duree" : response.length !== null ? response.length : "-",
-                                });
-                            }
+                                };
 
-                            updateResult(titlesList);
-                            clearTimeout(intId);
-                        }
-                    });
-                    secondRequest.open("GET", "https://musicbrainz.org/ws/2/recording/" + recording.id + "/?&inc=genres+ratings&fmt=json&limit=100&offset=" + offset, true);
-                    secondRequest.send();
+                                updateResult(newTitle, responsesNb, token);
+                                clearTimeout(intId);
+                            }
+                        });
+                        secondRequest.open("GET", "https://musicbrainz.org/ws/2/recording/" + recording.id + "/?&inc=genres+ratings&fmt=json&limit=100&offset=" + offset, true);
+                        secondRequest.send();
+                    }
                 }, i * 1000);
             }
 
-            getNextResults(responsesNb, offset);
+            if(continuer(token)) {
+                getNextResults(responsesNb, offset);
+            }
         };
     });
 
@@ -82,7 +79,7 @@ export const getDetailledFromRecording = (query, offset, updateResult, getNextRe
     request.send();
 }
 
-export const getDetailledFromArtist = (query, offset, updateResult, getNextResults) => {
+export const getDetailledFromArtist = (query, offset, updateResult, getNextResults, token, continuer) => {
     const request = new XMLHttpRequest();
 
     request.addEventListener('readystatechange', function() {
@@ -93,42 +90,44 @@ export const getDetailledFromArtist = (query, offset, updateResult, getNextResul
             // formattage du résultat
             for(let [i, recording] of allTitles.entries()) {
                 const intId = setTimeout(() => {
-                    const artists = typeof recording['artist-credit'] !== "undefined" ? recording['artist-credit'].map(x => x.name).join(', ') : "unknown artist";
-                    const rating = recording.rating['votes-count'] > 0 ? recording.rating.value : '-';
-                    const genres = recording.genres.length > 0 ? recording.genres.map(x => x.name).join(', ') : '-';
+                    // vérifie si on continue ou si la requête a changé
+                    if(continuer(token)) {
+                        const artists = typeof recording['artist-credit'] !== "undefined" ? recording['artist-credit'].map(x => x.name).join(', ') : "unknown artist";
+                        const rating = recording.rating['votes-count'] > 0 ? recording.rating.value : '-';
+                        const genres = recording.genres.length > 0 ? recording.genres.map(x => x.name).join(', ') : '-';
 
-                    //envoyer un requete supplémentaire pour récupérer les albums...
-                    // idéalement, il faudrait améliorer pour le cas où le nombre d'albums > 100...
-                    const secondRequest = new XMLHttpRequest();
-                    secondRequest.addEventListener('readystatechange', function() {
-                        if (secondRequest.readyState === XMLHttpRequest.DONE && (secondRequest.status === 200 || secondRequest.status === 304)) {
-                            const allReleases = JSON.parse(secondRequest.responseText);
-                            const albums = typeof allReleases.releases !== "undefined" ? allReleases.releases.map( x => [x.title, x.id]) : ["unknown album"];
+                        //envoyer un requete supplémentaire pour récupérer les albums...
+                        // idéalement, il faudrait améliorer pour le cas où le nombre d'albums > 100...
+                        const secondRequest = new XMLHttpRequest();
+                        secondRequest.addEventListener('readystatechange', function() {
+                            if (secondRequest.readyState === XMLHttpRequest.DONE && (secondRequest.status === 200 || secondRequest.status === 304)) {
+                                const allReleases = JSON.parse(secondRequest.responseText);
+                                const albums = (typeof allReleases.releases !== "undefined" && allReleases.releases.length > 0) ? allReleases.releases.map( x => [x.title, x.id]) : [["Unknown album", ""]];
 
-                            const titlesList = [];
-                            for(let album of albums) {
-                                titlesList.push({
+                                const newTitle = {
                                     "id": recording.id,
                                     "titre": recording.title,
-                                    "artiste" : artists,
-                                    "album" : album[0],
-                                    "albumId" : album[1],
+                                    "artistes" : artists,
+                                    "albums" : albums,
                                     "genres" : genres,
                                     "rating" : rating,
                                     "duree" : recording.length !== null ? recording.length : "-",
-                                });
+                                };
+
+                                updateResult(newTitle, responsesNb, token);
+                                clearTimeout(intId);
                             }
+                        });
 
-                            updateResult(titlesList);
-                            clearTimeout(intId);
-                        }
-                    });
-
-                    secondRequest.open("GET", "http://musicbrainz.org/ws/2/release?recording=" + recording.id + "&fmt=json", true);
-                    secondRequest.send();
+                        secondRequest.open("GET", "http://musicbrainz.org/ws/2/release?recording=" + recording.id + "&fmt=json", true);
+                        secondRequest.send();
+                    }
                 }, i * 1000);
             }
-            getNextResults(responsesNb, offset);
+
+            if(continuer(token)) {
+                getNextResults(responsesNb, offset);
+            }
         }
     });
 
@@ -136,7 +135,7 @@ export const getDetailledFromArtist = (query, offset, updateResult, getNextResul
     request.send();
 }
 
-export const getDetailledFromRelease = (query, offset, updateResult, getNextResults) => {
+export const getDetailledFromRelease = (query, offset, updateResult, getNextResults, token, continuer) => {
     const request = new XMLHttpRequest();
 
     request.addEventListener('readystatechange', function() {
@@ -145,25 +144,25 @@ export const getDetailledFromRelease = (query, offset, updateResult, getNextResu
             const allTitles = JSON.parse(request.responseText).recordings;
 
             // formattage du résultat
-            const titlesList = [];
             for(let recording of allTitles) {
                 const artists = typeof recording['artist-credit'] !== "undefined" ? recording['artist-credit'].map(x => x.name).join(', ') : "unknown artist";
                 const rating = recording.rating['votes-count'] > 0 ? recording.rating.value : '-';
                 const genres = recording.genres.length > 0 ? recording.genres.map(x => x.name).join(', ') : '-';
-                titlesList.push({
+                const newTitle = {
                     "id": recording.id,
                     "titre": recording.title,
-                    "artiste" : artists,
-                    "album" : query.label,
-                    "albumId" : query.value,
+                    "artistes" : artists,
+                    "albums" : [[query.label, query.value]],
                     "genres" : genres,
                     "rating" : rating,
                     "duree" : recording.length !== null ? recording.length : "-",
-                });
+                };
+                updateResult(newTitle, responsesNb, token);
             };
-            console.log(titlesList);
-            updateResult(titlesList);
-            getNextResults(responsesNb, offset);
+
+            if(continuer(token)) {
+                getNextResults(responsesNb, offset);
+            }
         }
     });
 
@@ -171,7 +170,7 @@ export const getDetailledFromRelease = (query, offset, updateResult, getNextResu
     request.send();
 }
 
-export const getPictures = (albumId, displayPictures) => {
+export const getPictures = (albumId, displayPictures, intId) => {
     const request = new XMLHttpRequest();
 
     request.addEventListener('readystatechange', function() {
@@ -186,4 +185,6 @@ export const getPictures = (albumId, displayPictures) => {
 
     request.open("GET", "http://coverartarchive.org/release/"+albumId, true);
     request.send();
+
+    clearTimeout(intId);
 }

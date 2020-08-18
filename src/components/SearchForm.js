@@ -10,7 +10,6 @@ class SearchForm extends React.Component {
             "queryField" : "all",
             "result" : [],
         };
-        //this.queryToken = "";
         this.queryId = "";
         this.intIds = [];
     }
@@ -19,8 +18,7 @@ class SearchForm extends React.Component {
         if(query !== "") {
             switch(queryField) {
                 case 'all' :
-                    // moyennement convaincue : les résultats vont potentiellement contenir 100 artistes puis 100 releases, etc..
-
+                    getSearchByName(query, 'artist', offset, this.updateResultAll);
                     break;
                 case 'artist' :
                 case 'release' :
@@ -39,9 +37,6 @@ class SearchForm extends React.Component {
                 "query" : query,
                 "result" : [],
             });
-
-            //this.queryToken = Math.random().toString(36).substr(2) + Math.random().toString(36).substr(2);
-            // ou même penser à abort() les requetes pour ne pas avoir de retour du tout
 
             // annuler les requetes liées à l'ancienne valeur de l'input
             for(let intId of this.intIds) {
@@ -120,30 +115,51 @@ class SearchForm extends React.Component {
     }
 
     updateResult = (result, responsesNb, offset) => {
-        // a voir si nécessaire de véfifier que les résultats qui arrivent sont bien attendus compte tenu de la recherche en cours ou s'il s'agit de résultats tardifs
-        // idée : envoyer un 'token' pour la query en cours qui serait stocké ici en this.token et comparé à réception
-        // abandonné étant donné que le Select de react-select ajoute une couche de 'filtre' et n'affiche que des choses pertinentes
         result = [...this.state.result, ...result];
         this.setState({
             "result" : result
         });
 
-        //this.nbSuccessRequests ++; //penser à reinitialiser au changement de requete
-
         const {query, queryField} = this.state;
 
-        /*if(queryField === "all" && this.nbSuccessRequests <= 3) {
-            this.responsesNb += responsesNb;
-        } else if(queryField !== "all") {
-            this.responsesNb = responsesNb;
-        }*/
-        // pb ici, les requetes sont envoyées plusieurs fois...
-        if(result.length < responsesNb && typeof query == "string") { //&& (queryField !== "all" || this.nbSuccessRequests % 3 !== 0)) {
+        if(result.length < responsesNb && typeof query == "string") {
             const intId = setTimeout(() => {
                 offset += 100;
                 this.sendRequest(queryField, query, offset);
             }, 500);
             this.intIds = [...this.intIds, intId];
+        }
+    }
+
+    updateResultAll = (result, responsesNb, offset, queryField) => {
+        result = result.map(obj => {
+            const rObj = {"value" : obj.value, "label" : obj.label + " [" + queryField + "]"}; // préciser le champ concerné par la réponse
+            return rObj;
+        });
+
+        result = [...this.state.result, ...result];
+        this.setState({
+            "result" : result
+        });
+
+        const {query} = this.state;
+
+        if(typeof query == "string") {
+            if(offset+100 < responsesNb) {
+                const intId = setTimeout(() => {
+                    offset += 100;
+                    this.sendRequest(queryField, query, offset);
+                }, 500);
+                this.intIds = [...this.intIds, intId];
+            }
+            switch(queryField){
+                case 'artist' :
+                    this.sendRequest('release', query, offset); // n'appelle pas la bonne méthode de mise à jour du résultat
+                case 'release' :
+                    this.sendRequest('recording', query, offset); // et en plus va potentiellement dépasser l'offset...
+                case 'recording' :
+                    this.sendRequest('artist', query, offset);
+            }
         }
     }
 
@@ -154,6 +170,9 @@ class SearchForm extends React.Component {
         for(let intId of this.intIds) {
             clearTimeout(intId);
         }
+
+        // stopper les requêtes précédentes visant à compléter le resultContainer
+        this.props.generateNewToken();
 
         const {query, queryField} = this.state;
         this.props.updateResultContainer(query, queryField);

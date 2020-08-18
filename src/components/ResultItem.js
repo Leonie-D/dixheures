@@ -2,18 +2,18 @@ import React from 'react';
 
 class ResultItem extends React.Component {
     openInfoModal = () => {
-        const {id, titre, artiste, album, albumId, openModal, genres, rating, duree} = this.props;
-        openModal(id, titre, artiste, album, albumId, genres, rating, duree);
+        const {id, titre, artistes, albums, openModal, genres, rating, duree} = this.props;
+        openModal(id, titre, artistes, albums, genres, rating, duree);
     }
 
     render() {
-        const {rang, titre, artiste, album} = this.props;
+        const {rang, titre, artistes, albums} = this.props;
         return (
             <tr>
                 <td>{rang}</td>
                 <td>{titre}</td>
-                <td>{artiste}</td>
-                <td>{album}</td>
+                <td>{artistes}</td>
+                <td>{albums[0][0] + (albums.length > 1 ? (" [+" + (albums.length - 1) + " album(s)]") : "")}</td>
                 <td>
                     <button onClick={this.openInfoModal}>
                         <svg viewBox="0 0 448 448" xmlns="http://www.w3.org/2000/svg">

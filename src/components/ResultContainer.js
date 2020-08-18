@@ -8,31 +8,36 @@ class ResultContainer extends React.Component {
         this.state = {
             "result" : [],
             "isLoaded" : false,
+            "responsesNb" : 0,
         }
         this.intIds = [];
     }
 
     sendRequest = (offset) => {
-        const {query, queryField} = this.props;
+        const {query, queryField, token, continuer} = this.props;
         switch(queryField) {
             case 'artist' :
-                getDetailledFromArtist(query.value, offset, this.updateResults, this.getNextResults);
+                getDetailledFromArtist(query.value, offset, this.updateResults, this.getNextResults, token, continuer);
                 break;
             case 'release' :
-                getDetailledFromRelease(query, offset, this.updateResults, this.getNextResults);
+                getDetailledFromRelease(query, offset, this.updateResults, this.getNextResults, token, continuer);
                 break;
             case 'recording' :
-                getDetailledFromRecording(query.label, offset, this.updateResults, this.getNextResults);
+                getDetailledFromRecording(query.label, offset, this.updateResults, this.getNextResults, token, continuer);
                 break;
         };
     }
 
-    updateResults = (result) => {
-        result = [...this.state.result, ...result];
-        this.setState({
-            "result" : result,
-            "isLoaded" : true,
-        });
+    updateResults = (newTitle, responsesNb, token) => {
+        // ne pas intégrer un résultat tardif
+        if(token === this.props.token) {
+            const result = [...this.state.result, newTitle];
+            this.setState({
+                "result" : result,
+                "isLoaded" : true,
+                "responsesNb" : responsesNb,
+            });
+        }
     }
 
     getNextResults = (responsesNb, offset) => {
@@ -45,49 +50,59 @@ class ResultContainer extends React.Component {
         }
     }
 
-    componentDidMount() {
-        this.sendRequest(0);
-    }
-
-    componentWillUnmount() {
-        for(let intId of this.intIds) {
-            clearTimeout(intId);
+    componentDidUpdate(prevProps, prevState, snapshot) {
+        if(this.props.token !== prevProps.token) {
+            for(let intId of this.intIds) {
+                clearTimeout(intId);
+            }
+            this.intIds = [];
+            this.setState({
+                "result" : [],
+            })
+            this.sendRequest(0);
         }
-        this.intIds = [];
     }
 
     render(){
-        const {result, isLoaded} = this.state;
-
-        return(
-            <div className="resultContainer">
-                {isLoaded ?
-                    result.length > 0 ?
+        const {result, isLoaded, responsesNb} = this.state;
+        let resultContainer;
+        if(this.props.token === "") {
+            resultContainer = <p>Que puis-je faire pour toi ?</p>
+        } else {
+            if(isLoaded) {
+                if(result.length > 0) {
+                    resultContainer =
                         <div>
                             <div className="table-header">
                                 <h2>Voici tout ce que j'ai trouvé</h2>
-                                <p>{result.length > 1 ? "- " + result.length + " résultats" : "- " + result.length + " résultat"}</p>
+                                <p>{"- " + result.length + (result.length > 1 ?  " résultats" : " résultat") + "/" + responsesNb}</p>
                             </div>
                             <table className="resultats">
                                 <thead>
-                                    <tr>
-                                        <th>N°</th>
-                                        <th>Titre</th>
-                                        <th>Artiste</th>
-                                        <th>Album</th>
-                                        <th>En savoir plus</th>
-                                    </tr>
+                                <tr>
+                                    <th>N°</th>
+                                    <th>Titre</th>
+                                    <th>Artiste(s)</th>
+                                    <th>Album(s)</th>
+                                    <th>En savoir plus</th>
+                                </tr>
                                 </thead>
                                 <tbody>
-                                   {result.map((r, index) => <ResultItem key={index} id={r.id} rang={index} titre={r.titre} artiste={r.artiste} album={r.album} albumId={r.albumId} openModal={this.props.openModal} genres={r.genres} rating={r.rating} duree={r.duree} />)}
+                                {result.map((r, index) => <ResultItem key={index} id={r.id} rang={index + 1} titre={r.titre} artistes={r.artistes} albums={r.albums} openModal={this.props.openModal} genres={r.genres} rating={r.rating} duree={r.duree} />)}
                                 </tbody>
                             </table>
                         </div>
-                        :
-                        <p>Aucun résultat</p>
-                    :
-                    <p>Chargement...</p>
+                } else {
+                    resultContainer = <p>Aucun résultat</p>
                 }
+            } else {
+                resultContainer = <p>Chargement...</p>
+            }
+        }
+
+        return(
+            <div className="resultContainer">
+                {resultContainer}
             </div>
         );
     }

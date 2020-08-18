@@ -19,11 +19,12 @@ class App extends React.Component {
         }
         this.id = "";
         this.titre = "";
-        this.artiste = "";
-        this.album = "";
+        this.artistes = "";
+        this.albums = "";
         this.images = [];
         this.rating = "";
         this.duree = "";
+        this.queryToken = "";
     }
 
     updateResultContainer = (query, queryField) => {
@@ -40,16 +41,29 @@ class App extends React.Component {
         }
     }
 
-    openModal = (id, titre, artiste, album, albumId, genres, rating, duree) => {
+    generateNewToken = () => {
+        this.queryToken = Math.random().toString(36).substr(2) + Math.random().toString(36).substr(2);
+    }
+
+    continuer = (token) => {
+        return this.queryToken === token;
+    }
+
+    openModal = (id, titre, artistes, albums, genres, rating, duree) => {
         this.setState({
             "modalIsOpen" : true,
         });
-        getPictures(albumId, this.displayPictures);
+
+        for(let [i, album] of albums.entries()) {
+            const intId = setTimeout(() => {
+                getPictures(album[1], this.displayPictures, intId);
+            }, i*500);
+        };
 
         this.id = id;
         this.titre = titre;
-        this.artiste = artiste;
-        this.album = album;
+        this.artistes = artistes;
+        this.albums = albums.map(x => x[0]).join(', ');
         this.genres = genres;
         this.rating = rating;
         this.duree = duree;
@@ -63,8 +77,8 @@ class App extends React.Component {
         });
         this.id = "";
         this.titre = "";
-        this.artiste = "";
-        this.album = "";
+        this.artistes = "";
+        this.albums = "";
         this.images = [];
         this.genres = "";
         this.rating = "";
@@ -73,7 +87,7 @@ class App extends React.Component {
 
     displayPictures = (images) => {
         this.setState({
-            "images" : images,
+            "images" : [...this.state.images, ...images],
             "imagesAreLoaded" : true,
         });
     }
@@ -84,10 +98,10 @@ class App extends React.Component {
         return (
             <div className="App">
                 <Header />
-                <RecordingDetails modalIsOpen={modalIsOpen} closeModal={this.closeModal} id={this.id} titre={this.titre} artiste={this.artiste} album={this.album} images={images} imagesAreLoaded={imagesAreLoaded} genres={this.genres} rating={this.rating} duree={this.duree} />
+                <RecordingDetails modalIsOpen={modalIsOpen} closeModal={this.closeModal} id={this.id} titre={this.titre} artistes={this.artistes} albums={this.albums} images={images} imagesAreLoaded={imagesAreLoaded} genres={this.genres} rating={this.rating} duree={this.duree} />
                 <main>
-                    <SearchForm updateResultContainer={this.updateResultContainer} />
-                    {query === "" ? <p>Que puis-je faire pour toi ?</p> : <ResultContainer query={query} queryField={queryField} openModal={this.openModal} />}
+                    <SearchForm updateResultContainer={this.updateResultContainer} generateNewToken={this.generateNewToken} />
+                    <ResultContainer query={query} queryField={queryField} token={this.queryToken} continuer={this.continuer} openModal={this.openModal} />
                 </main>
                 <Footer />
             </div>

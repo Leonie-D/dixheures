@@ -18,7 +18,7 @@ class RecordingDetails extends React.Component {
             }
         };
 
-        const {titre, artiste, album, images, imagesAreLoaded, genres, rating, duree} = this.props;
+        const {titre, artistes, albums, images, imagesAreLoaded, genres, rating, duree} = this.props;
 
         return (
             <Modal
@@ -33,10 +33,10 @@ class RecordingDetails extends React.Component {
                     <button onClick={this.props.closeModal}>Fermer</button>
                 </header>
                 <ul className="details">
-                    <li><strong>Artiste(s)</strong> : {artiste}</li>
-                    <li><strong>Album</strong> : {album}</li>
+                    <li><strong>Artiste(s)</strong> : {artistes}</li>
+                    <li><strong>Album(s)</strong> : {albums}</li>
                     <li><strong>Genre(s)</strong> : {genres}</li>
-                    <li><strong>Durée</strong> : {~~(duree/60000) + ":" + Math.round((duree%60000)/1000)}</li>
+                    <li><strong>Durée</strong> : {isNaN(duree) ? duree : ~~(duree/60000) + ":" + Math.round((duree%60000)/1000)}</li> {/*encore plus juste : moyenner les durées de tous les albums...*/}
                     <li><strong>Note</strong> : {rating === '-' ? rating : rating + "/5"}</li>
                 </ul>
                 <hr/>
