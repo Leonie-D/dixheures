@@ -34,7 +34,7 @@ class App extends React.Component {
             });
         } else {
             this.setState({
-                "query" : "",
+                "query" : query,
                 "queryField" : "",
             });
         }

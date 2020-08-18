@@ -15,7 +15,7 @@ class ResultContainer extends React.Component {
 
     sendRequest = (offset) => {
         const {query, queryField, token, continuer} = this.props;
-        getAllRecordings(query.label, queryField, offset, this.updateResults, this.getNextResults, token, continuer);
+        getAllRecordings(query.value, queryField, offset, this.updateResults, this.getNextResults, token, continuer);
     }
 
     updateResults = (recordingsList, responsesNb, token) => {

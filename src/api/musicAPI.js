@@ -9,12 +9,12 @@ export const getSearchByName = (query, queryField, offset, updateResult) => {
             const responsesNb = JSON.parse(request.responseText).count;
             const allResults = JSON.parse(request.responseText)[key];
 
-            // formattage du résultat -> [{"value" : identifiant unique, "label" : nom de l'artiste/titre/album...}]
+            // formattage du résultat
             for(let result of allResults) {
                 if(queryField === "artist") {
-                    resultList.push({"value": result.id, "label": result.name});
+                    resultList.push({"value": result.name, "label": result.name});
                 } else {
-                    resultList.push({"value": result.id, "label": result.title});
+                    resultList.push({"value": result.title, "label": result.title});
                 }
             };
 

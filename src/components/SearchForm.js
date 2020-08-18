@@ -11,7 +11,6 @@ class SearchForm extends React.Component {
             "result" : [],
             "menuIsOpen" : false,
         };
-        this.queryId = "";
         this.intIds = [];
         this.focusOnSelect = false;
     }
@@ -20,6 +19,7 @@ class SearchForm extends React.Component {
         if(query !== "") {
             switch(queryField) {
                 case 'all' :
+                    // pas très convaincue par ce système qui alimente le menu déroulantpar bloc de 100 entités de même type...
                     getSearchByName(query, 'artist', offset, this.updateResult);
                     getSearchByName(query, 'release', offset, this.updateResult);
                     getSearchByName(query, 'recording', offset, this.updateResult);
@@ -65,14 +65,14 @@ class SearchForm extends React.Component {
             "query" : query !== null ? query : "",
             "menuIsOpen" : false,
         });
-        this.queryId = query !== null ? query.value : "";
+        console.log(this.state.query);
 
         // annuler les requetes liées à l'ancienne valeur de l'input
         this.clearPreviousTimeOut();
 
         // si champ vidé, l'indiquer dans resultContainer
         if(action.action === "clear") {
-            this.props.updateResultContainer(this.queryId, this.state.queryField);
+            this.props.updateResultContainer(this.state.query, this.state.queryField);
         }
 
         // indiquer si focus lié à la sélection ou non (pour removeFinalQuery)
@@ -80,6 +80,7 @@ class SearchForm extends React.Component {
     }
 
     removeFinalQuery = () => {
+        console.log(this.focusOnSelect);
         if(this.focusOnSelect) {
             // réinitialisation de la variable
             this.focusOnSelect = false;
@@ -94,19 +95,23 @@ class SearchForm extends React.Component {
             this.clearPreviousTimeOut();
 
             // Indiquer dans resultContainer qu'aucune recherche n'est en cours
-            this.queryId = "";
-            this.props.updateResultContainer(this.queryId, this.state.queryField);
+            this.props.updateResultContainer(this.state.query, this.state.queryField);
         }
     }
 
     blur = () => {
+        console.log('blur');
         this.setState({
             "menuIsOpen" : false
         });
+
+        // réinitialisation de la variable
+        this.focusOnSelect = false; // ajouter une condition ici
     }
 
     updateField = (queryField) => {
         const query = typeof this.state.query === "string" ? this.state.query : this.state.query.label;
+        console.log('updateField');
 
         this.setState({
             "queryField" : queryField.value,
