@@ -9,16 +9,20 @@ class SearchForm extends React.Component {
             "query" : "",
             "queryField" : "all",
             "result" : [],
+            "menuIsOpen" : false,
         };
         this.queryId = "";
         this.intIds = [];
+        this.focusOnSelect = false;
     }
 
     sendRequest = (queryField, query, offset) => {
         if(query !== "") {
             switch(queryField) {
                 case 'all' :
-                    getSearchByName(query, 'artist', offset, this.updateResultAll);
+                    getSearchByName(query, 'artist', offset, this.updateResult);
+                    getSearchByName(query, 'release', offset, this.updateResult);
+                    getSearchByName(query, 'recording', offset, this.updateResult);
                     break;
                 case 'artist' :
                 case 'release' :
@@ -36,6 +40,7 @@ class SearchForm extends React.Component {
             this.setState({
                 "query" : query,
                 "result" : [],
+                "menuIsOpen" : true,
             });
 
             // annuler les requetes liées à l'ancienne valeur de l'input
@@ -54,6 +59,7 @@ class SearchForm extends React.Component {
     updateFinalQuery = (query, action) => {
         this.setState({
             "query" : query !== null ? query : "",
+            "menuIsOpen" : false,
         });
         this.queryId = query !== null ? query.value : "";
 
@@ -67,21 +73,21 @@ class SearchForm extends React.Component {
         if(action.action === "clear") {
             this.props.updateResultContainer(this.queryId, this.state.queryField);
         }
+
+        // indiquer si focus lié à la sélection ou non (pour removeFinalQuery)
+        this.focusOnSelect = true;
     }
 
-    /*keepInputValue = (ev) => {
-        if(ev.target.value === this.state.query) {
-            this.setState({
-                "query" : ev.target.value,
-            });
-        }
-    }*/
-
     removeFinalQuery = (ev) => {
-        if(ev.target.value !== this.state.query) {
+        console.log(this.focusOnSelect);
+        if(this.focusOnSelect) {
+            // réinitialisation de la variable
+            this.focusOnSelect = false;
+        } else {
             this.setState({
                 "query" : "",
                 "result" : [],
+                "menuIsOpen" : true,
             });
 
             // annuler les requetes liées à l'ancienne valeur de l'input
@@ -96,12 +102,19 @@ class SearchForm extends React.Component {
         }
     }
 
+    blur = () => {
+        this.setState({
+            "menuIsOpen" : false
+        });
+    }
+
     updateField = (queryField) => {
         const query = typeof this.state.query === "string" ? this.state.query : this.state.query.label;
 
         this.setState({
             "queryField" : queryField.value,
             "result" : [],
+            "menuIsOpen" : true,
         });
 
         // annuler les requetes liées à l'ancienne valeur de l'input
@@ -114,57 +127,39 @@ class SearchForm extends React.Component {
         this.sendRequest(queryField.value, query, 0);
     }
 
-    updateResult = (result, responsesNb, offset) => {
-        result = [...this.state.result, ...result];
-        this.setState({
-            "result" : result
-        });
-
+    updateResult = (result, responsesNb, offset, actualQueryField) => {
         const {query, queryField} = this.state;
 
-        if(result.length < responsesNb && typeof query == "string") {
-            const intId = setTimeout(() => {
-                offset += 100;
-                this.sendRequest(queryField, query, offset);
-            }, 500);
-            this.intIds = [...this.intIds, intId];
+        if(queryField === 'all') {
+            result = result.map(obj => {
+                const rObj = {"value" : obj.value, "label" : obj.label + " [" + actualQueryField + "]", "type" : actualQueryField}; // préciser le champ concerné par la réponse
+                return rObj;
+            });
         }
-    }
-
-    updateResultAll = (result, responsesNb, offset, queryField) => {
-        result = result.map(obj => {
-            const rObj = {"value" : obj.value, "label" : obj.label + " [" + queryField + "]"}; // préciser le champ concerné par la réponse
-            return rObj;
-        });
 
         result = [...this.state.result, ...result];
         this.setState({
             "result" : result
         });
 
-        const {query} = this.state;
-
         if(typeof query == "string") {
-            if(offset+100 < responsesNb) {
+            if(offset+100 < responsesNb){
                 const intId = setTimeout(() => {
                     offset += 100;
-                    this.sendRequest(queryField, query, offset);
-                }, 500);
+                    getSearchByName(query, actualQueryField, offset, this.updateResult);
+                }, 2000); // génère quand même des erreurs 503... Va même jusqu'à perturber le submit...
                 this.intIds = [...this.intIds, intId];
-            }
-            switch(queryField){
-                case 'artist' :
-                    this.sendRequest('release', query, offset); // n'appelle pas la bonne méthode de mise à jour du résultat
-                case 'release' :
-                    this.sendRequest('recording', query, offset); // et en plus va potentiellement dépasser l'offset...
-                case 'recording' :
-                    this.sendRequest('artist', query, offset);
             }
         }
     }
 
     submit = (ev) => {
         ev.preventDefault();
+
+        this.setState({
+            "menuIsOpen" : false,
+        });
+        this.focusOnSelect = false;
 
         // stopper les requêtes précédentes visant à compléter le menu déroulant
         for(let intId of this.intIds) {
@@ -175,7 +170,11 @@ class SearchForm extends React.Component {
         this.props.generateNewToken();
 
         const {query, queryField} = this.state;
-        this.props.updateResultContainer(query, queryField);
+        if(queryField === 'all') {
+            this.props.updateResultContainer(query, query.type);
+        } else {
+            this.props.updateResultContainer(query, queryField);
+        }
     }
 
     render() {
@@ -187,7 +186,7 @@ class SearchForm extends React.Component {
                 {value :'release' , label : 'Album'}
         ];
 
-        const {query, result, queryField} = this.state;
+        const {query, result, queryField, menuIsOpen} = this.state;
 
         return(
             <form onSubmit={this.submit}>
@@ -195,9 +194,10 @@ class SearchForm extends React.Component {
                 <Select name = "query"
                         onInputChange = {this.updateQuery}
                         onChange = {this.updateFinalQuery}
-                        //onBlur = {this.keepInputValue}
                         onFocus = {this.removeFinalQuery}
+                        onBlur = {this.blur}
                         options = {result}
+                        menuIsOpen = {menuIsOpen}
                         noOptionsMessage = {() => "Hum... je ne trouve aucun résultat"}
                         inputValue = {typeof query === "string" ? query : ''}
                         value = {query}

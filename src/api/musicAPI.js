@@ -18,6 +18,7 @@ export const getSearchByName = (query, queryField, offset, updateResult) => {
                 }
             };
 
+            // affichage des résultats
             updateResult(resultList, responsesNb, offset, queryField);
         };
     });

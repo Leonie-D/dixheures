@@ -5,7 +5,7 @@ class Footer extends React.Component {
         return(
             <footer>
                 <p>Dixheures</p>
-                <p>Léonie Dusart- Juillet 2020</p>
+                <p>Léonie Dusart - été 2020</p>
             </footer>
         );
     }
