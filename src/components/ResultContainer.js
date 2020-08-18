@@ -1,6 +1,6 @@
 import React from 'react';
 import ResultItem from "./ResultItem";
-import {getDetailledFromRecording, getDetailledFromArtist, getDetailledFromRelease} from "../api/musicAPI";
+import {getAllRecordings, getDetailledFromRecording, getDetailledFromArtist, getDetailledFromRelease} from "../api/musicAPI";
 
 class ResultContainer extends React.Component {
     constructor(props) {
@@ -15,23 +15,13 @@ class ResultContainer extends React.Component {
 
     sendRequest = (offset) => {
         const {query, queryField, token, continuer} = this.props;
-        switch(queryField) {
-            case 'artist' :
-                getDetailledFromArtist(query.value, offset, this.updateResults, this.getNextResults, token, continuer);
-                break;
-            case 'release' :
-                getDetailledFromRelease(query, offset, this.updateResults, this.getNextResults, token, continuer);
-                break;
-            case 'recording' :
-                getDetailledFromRecording(query.label, offset, this.updateResults, this.getNextResults, token, continuer);
-                break;
-        };
+        getAllRecordings(query.label, queryField, offset, this.updateResults, this.getNextResults, token, continuer);
     }
 
-    updateResults = (newTitle, responsesNb, token) => {
+    updateResults = (recordingsList, responsesNb, token) => {
         // ne pas intégrer un résultat tardif
         if(token === this.props.token) {
-            const result = [...this.state.result, newTitle];
+            const result = [...this.state.result, ...recordingsList];
             this.setState({
                 "result" : result,
                 "isLoaded" : true,
@@ -45,7 +35,7 @@ class ResultContainer extends React.Component {
             const intId = setTimeout(() => {
                 offset += 100;
                 this.sendRequest(offset);
-            }, 100000);
+            }, 500);
             this.intIds = [...this.intIds, intId];
         }
     }
@@ -88,7 +78,7 @@ class ResultContainer extends React.Component {
                                 </tr>
                                 </thead>
                                 <tbody>
-                                {result.map((r, index) => <ResultItem key={index} id={r.id} rang={index + 1} titre={r.titre} artistes={r.artistes} albums={r.albums} openModal={this.props.openModal} genres={r.genres} rating={r.rating} duree={r.duree} />)}
+                                {result.map((r, index) => <ResultItem key={index} id={r.id} rang={index + 1} titre={r.titre} artistes={r.artistes} albums={r.albums} openModal={this.props.openModal} duree={r.duree} />)}
                                 </tbody>
                             </table>
                         </div>

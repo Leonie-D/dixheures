@@ -21,7 +21,6 @@ class App extends React.Component {
         this.titre = "";
         this.artistes = "";
         this.albums = "";
-        this.images = [];
         this.rating = "";
         this.duree = "";
         this.queryToken = "";
@@ -49,7 +48,7 @@ class App extends React.Component {
         return this.queryToken === token;
     }
 
-    openModal = (id, titre, artistes, albums, genres, rating, duree) => {
+    openModal = (id, titre, artistes, albums, duree) => {
         this.setState({
             "modalIsOpen" : true,
         });
@@ -64,8 +63,6 @@ class App extends React.Component {
         this.titre = titre;
         this.artistes = artistes;
         this.albums = albums.map(x => x[0]).join(', ');
-        this.genres = genres;
-        this.rating = rating;
         this.duree = duree;
     }
 
@@ -79,9 +76,6 @@ class App extends React.Component {
         this.titre = "";
         this.artistes = "";
         this.albums = "";
-        this.images = [];
-        this.genres = "";
-        this.rating = "";
         this.duree = "";
     }
 

@@ -33,6 +33,13 @@ class SearchForm extends React.Component {
         }
     }
 
+    clearPreviousTimeOut = () => {
+        for(let intId of this.intIds) {
+            clearTimeout(intId);
+        }
+        this.intIds = [];
+    }
+
     updateQuery = (query, action) => {
         if(action.action === "input-change"){
             const {queryField} = this.state;
@@ -44,10 +51,7 @@ class SearchForm extends React.Component {
             });
 
             // annuler les requetes liées à l'ancienne valeur de l'input
-            for(let intId of this.intIds) {
-                clearTimeout(intId);
-            }
-            this.intIds = [];
+            this.clearPreviousTimeOut();
 
             // si champ non vide, envoyer la première requete pour mettre à jour en temps réel le menu déroulant
             if(query !== "") {
@@ -64,10 +68,7 @@ class SearchForm extends React.Component {
         this.queryId = query !== null ? query.value : "";
 
         // annuler les requetes liées à l'ancienne valeur de l'input
-        for(let intId of this.intIds) {
-            clearTimeout(intId);
-        }
-        this.intIds = [];
+        this.clearPreviousTimeOut();
 
         // si champ vidé, l'indiquer dans resultContainer
         if(action.action === "clear") {
@@ -78,8 +79,7 @@ class SearchForm extends React.Component {
         this.focusOnSelect = true;
     }
 
-    removeFinalQuery = (ev) => {
-        console.log(this.focusOnSelect);
+    removeFinalQuery = () => {
         if(this.focusOnSelect) {
             // réinitialisation de la variable
             this.focusOnSelect = false;
@@ -91,10 +91,7 @@ class SearchForm extends React.Component {
             });
 
             // annuler les requetes liées à l'ancienne valeur de l'input
-            for(let intId of this.intIds) {
-                clearTimeout(intId);
-            }
-            this.intIds = [];
+            this.clearPreviousTimeOut();
 
             // Indiquer dans resultContainer qu'aucune recherche n'est en cours
             this.queryId = "";
@@ -118,10 +115,7 @@ class SearchForm extends React.Component {
         });
 
         // annuler les requetes liées à l'ancienne valeur de l'input
-        for(let intId of this.intIds) {
-            clearTimeout(intId);
-        }
-        this.intIds = [];
+        this.clearPreviousTimeOut();
 
         // envoyer la première requete pour mettre à jour en temps réel le menu déroulant
         this.sendRequest(queryField.value, query, 0);
@@ -159,12 +153,9 @@ class SearchForm extends React.Component {
         this.setState({
             "menuIsOpen" : false,
         });
-        this.focusOnSelect = false;
 
         // stopper les requêtes précédentes visant à compléter le menu déroulant
-        for(let intId of this.intIds) {
-            clearTimeout(intId);
-        }
+        this.clearPreviousTimeOut();
 
         // stopper les requêtes précédentes visant à compléter le resultContainer
         this.props.generateNewToken();
