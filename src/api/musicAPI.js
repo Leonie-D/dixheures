@@ -56,8 +56,11 @@ export const getAllRecordings = (query, queryField, offset, updateResult, getNex
             }
         };
     });
-
-    request.open("GET", "https://musicbrainz.org/ws/2/recording/?query=" + queryField + ":" + query + "&fmt=json&limit=100&offset=" + offset, true);
+    if(queryField === 'all') {
+        request.open("GET", "https://musicbrainz.org/ws/2/recording/?query=artist:" + query + "ORrecording:" + query + "ORrelease:" + query + "&fmt=json&limit=100&offset=" + offset, true);
+    } else {
+        request.open("GET", "https://musicbrainz.org/ws/2/recording/?query=" + queryField + ":" + query + "&fmt=json&limit=100&offset=" + offset, true);
+    }
     request.send();
 }
 

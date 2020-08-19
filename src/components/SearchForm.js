@@ -65,7 +65,6 @@ class SearchForm extends React.Component {
             "query" : query !== null ? query : "",
             "menuIsOpen" : false,
         });
-        console.log(this.state.query);
 
         // annuler les requetes liées à l'ancienne valeur de l'input
         this.clearPreviousTimeOut();
@@ -77,6 +76,7 @@ class SearchForm extends React.Component {
 
         // indiquer si focus lié à la sélection ou non (pour removeFinalQuery)
         this.focusOnSelect = true;
+        console.log('finalquery');
     }
 
     removeFinalQuery = () => {
@@ -104,9 +104,6 @@ class SearchForm extends React.Component {
         this.setState({
             "menuIsOpen" : false
         });
-
-        // réinitialisation de la variable
-        this.focusOnSelect = false; // ajouter une condition ici
     }
 
     updateField = (queryField) => {
