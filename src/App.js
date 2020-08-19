@@ -5,7 +5,7 @@ import ResultContainer from "./components/ResultContainer";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import RecordingDetails from "./components/RecordingDetails";
-import {getPictures} from "./api/musicAPI";
+import {getPictures, getAdditionnalDetails} from "./api/musicAPI";
 
 class App extends React.Component {
     constructor(props) {
@@ -16,6 +16,8 @@ class App extends React.Component {
             "modalIsOpen" : false,
             "images" : [],
             "imagesAreLoaded" : false,
+            "genres" : "chargement...",
+            "rating" : "chargement...",
         }
         this.id = "";
         this.titre = "";
@@ -54,10 +56,15 @@ class App extends React.Component {
         });
 
         for(let [i, album] of albums.entries()) {
-            const intId = setTimeout(() => {
-                getPictures(album[1], this.displayPictures, intId);
+            setTimeout(() => {
+                getPictures(album[1], this.displayPictures);
             }, i*500);
         };
+
+        setTimeout(() => {
+            getAdditionnalDetails(id, this.updateAdditionnalDetails);
+        }, 500);
+
 
         this.id = id;
         this.titre = titre;
@@ -71,6 +78,8 @@ class App extends React.Component {
             "modalIsOpen" : false,
             "images" : [],
             "imagesAreLoaded" : false,
+            "genres" : "chargement...",
+            "rating" : "chargement...",
         });
         this.id = "";
         this.titre = "";
@@ -86,13 +95,20 @@ class App extends React.Component {
         });
     }
 
+    updateAdditionnalDetails = (rating, genres) => {
+        this.setState({
+            "genres" : genres.length > 0 ? genres.map(x => x.name).join(', ') : "-",
+            "rating" : rating.value === null ? "-" : rating.value + "/5 (" + rating['votes-count'] + "vote(s))",
+        });
+    }
+
     render() {
-        const {query, queryField, modalIsOpen, images, imagesAreLoaded} = this.state;
+        const {query, queryField, modalIsOpen, images, imagesAreLoaded, genres, rating} = this.state;
 
         return (
             <div className="App">
                 <Header />
-                <RecordingDetails modalIsOpen={modalIsOpen} closeModal={this.closeModal} id={this.id} titre={this.titre} artistes={this.artistes} albums={this.albums} images={images} imagesAreLoaded={imagesAreLoaded} genres={this.genres} rating={this.rating} duree={this.duree} />
+                <RecordingDetails modalIsOpen={modalIsOpen} closeModal={this.closeModal} id={this.id} titre={this.titre} artistes={this.artistes} albums={this.albums} images={images} imagesAreLoaded={imagesAreLoaded} genres={genres} rating={rating} duree={this.duree} />
                 <main>
                     <SearchForm updateResultContainer={this.updateResultContainer} generateNewToken={this.generateNewToken} />
                     <ResultContainer query={query} queryField={queryField} token={this.queryToken} continuer={this.continuer} openModal={this.openModal} />

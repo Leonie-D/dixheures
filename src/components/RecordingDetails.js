@@ -37,7 +37,7 @@ class RecordingDetails extends React.Component {
                     <li><strong>Album(s)</strong> : {albums}</li>
                     <li><strong>Genre(s)</strong> : {genres}</li>
                     <li><strong>Durée</strong> : {isNaN(duree) ? duree : ~~(duree/60000) + ":" + Math.round((duree%60000)/1000)}</li> {/*encore plus juste : moyenner les durées de tous les albums...*/}
-                    <li><strong>Note</strong> : {rating === '-' ? rating : rating + "/5"}</li>
+                    <li><strong>Note</strong> : {rating}</li>
                 </ul>
                 <hr/>
                 <div className="galerie">

@@ -1,6 +1,6 @@
 import React from 'react';
 import ResultItem from "./ResultItem";
-import {getAllRecordings, getDetailledFromRecording, getDetailledFromArtist, getDetailledFromRelease} from "../api/musicAPI";
+import {getAllRecordings} from "../api/musicAPI";
 
 class ResultContainer extends React.Component {
     constructor(props) {

@@ -66,7 +66,7 @@ export const getAllRecordings = (query, queryField, offset, updateResult, getNex
     request.send();
 }
 
-export const getPictures = (albumId, displayPictures, intId) => {
+export const getPictures = (albumId, displayPictures) => {
     const request = new XMLHttpRequest();
 
     request.addEventListener('readystatechange', function() {
@@ -81,16 +81,17 @@ export const getPictures = (albumId, displayPictures, intId) => {
 
     request.open("GET", "http://coverartarchive.org/release/"+albumId, true);
     request.send();
-
-    clearTimeout(intId);
 }
 
-export const getAditionnalDetails = (recordingId) => {
+export const getAdditionnalDetails = (recordingId, updateAdditionnalDetails) => {
     const request = new XMLHttpRequest();
 
     request.addEventListener('readystatechange', function() {
         if (request.readyState === XMLHttpRequest.DONE && (request.status === 200 || request.status === 304)) {
             const genres = JSON.parse(request.responseText).genres;
+            const rating = JSON.parse(request.responseText).rating;
+
+            updateAdditionnalDetails(rating, genres);
         }
     });
 
