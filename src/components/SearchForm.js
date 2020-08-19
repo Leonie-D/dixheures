@@ -12,6 +12,7 @@ class SearchForm extends React.Component {
         };
         this.intIds = [];
         this.focusOnSelect = false;
+        this.queryToken = "";
     }
 
     sendRequest = (queryField, query, offset) => {
@@ -19,21 +20,25 @@ class SearchForm extends React.Component {
             switch(queryField) {
                 case 'all' :
                     // pas très convaincue par ce système qui alimente le menu déroulantpar bloc de 100 entités de même type...
-                    getSearchByName(query, 'artist', offset, this.updateResult);
+                    getSearchByName(query, 'artist', offset, this.updateResult, this.queryToken);
                     setTimeout(() => {
-                        getSearchByName(query, 'release', offset, this.updateResult)
+                        getSearchByName(query, 'release', offset, this.updateResult, this.queryToken)
                     }, 1000); // génère quand même des erreurs 503...
                     setTimeout(() => {
-                        getSearchByName(query, 'recording', offset, this.updateResult)
+                        getSearchByName(query, 'recording', offset, this.updateResult, this.queryToken)
                     }, 1000); // génère quand même des erreurs 503...
                     break;
                 case 'artist' :
                 case 'release' :
                 case 'recording' :
-                    getSearchByName(query, queryField, offset, this.updateResult);
+                    getSearchByName(query, queryField, offset, this.updateResult, this.queryToken);
                     break;
             };
         }
+    }
+
+    generateNewQueryToken = () => {
+        this.queryToken = Math.random().toString(36).substr(2) + Math.random().toString(36).substr(2);
     }
 
     clearPreviousTimeOut = () => {
@@ -52,6 +57,8 @@ class SearchForm extends React.Component {
                 "result" : [],
             });
 
+            this.generateNewQueryToken();
+
             // annuler les requetes liées à l'ancienne valeur de l'input
             this.clearPreviousTimeOut();
 
@@ -68,6 +75,8 @@ class SearchForm extends React.Component {
         this.setState({
             "query" : query !== null ? query : "",
         });
+
+        this.generateNewQueryToken();
 
         // annuler les requetes liées à l'ancienne valeur de l'input
         this.clearPreviousTimeOut();
@@ -91,6 +100,8 @@ class SearchForm extends React.Component {
                 "result" : [],
             });
 
+            this.generateNewQueryToken();
+
             // annuler les requetes liées à l'ancienne valeur de l'input
             this.clearPreviousTimeOut();
 
@@ -107,6 +118,8 @@ class SearchForm extends React.Component {
             "result" : [],
         });
 
+        this.generateNewQueryToken();
+
         // annuler les requetes liées à l'ancienne valeur de l'input
         this.clearPreviousTimeOut();
 
@@ -114,28 +127,30 @@ class SearchForm extends React.Component {
         this.sendRequest(queryField.value, query, 0);
     }
 
-    updateResult = (result, responsesNb, offset, actualQueryField) => {
-        const {query, queryField} = this.state;
+    updateResult = (result, responsesNb, offset, actualQueryField, token) => {
+        if(this.queryToken === token) {
+            const {query, queryField} = this.state;
 
-        if(queryField === 'all') {
-            result = result.map(obj => {
-                const rObj = {"value" : obj.value, "label" : obj.label + " [" + actualQueryField + "]", "type" : actualQueryField}; // préciser le champ concerné par la réponse
-                return rObj;
+            if(queryField === 'all') {
+                result = result.map(obj => {
+                    const rObj = {"value" : obj.value, "label" : obj.label + " [" + actualQueryField + "]"}; // préciser le champ concerné par la réponse
+                    return rObj;
+                });
+            }
+
+            result = [...this.state.result, ...result];
+            this.setState({
+                "result" : result
             });
-        }
 
-        result = [...this.state.result, ...result];
-        this.setState({
-            "result" : result
-        });
-
-        if(typeof query == "string") {
-            if(offset+100 < responsesNb){
-                const intId = setTimeout(() => {
-                    offset += 100;
-                    getSearchByName(query, actualQueryField, offset, this.updateResult);
-                }, 2000); // génère quand même des erreurs 503... Va même jusqu'à perturber le submit...
-                this.intIds = [...this.intIds, intId];
+            if(typeof query == "string") {
+                if(offset+100 < responsesNb){
+                    const intId = setTimeout(() => {
+                        offset += 100;
+                        getSearchByName(query, actualQueryField, offset, this.updateResult, this.queryToken);
+                    }, 2000); // génère quand même des erreurs 503... Va même jusqu'à perturber le submit...
+                    this.intIds = [...this.intIds, intId];
+                }
             }
         }
     }
@@ -153,11 +168,7 @@ class SearchForm extends React.Component {
         this.props.generateNewToken();
 
         const {query, queryField} = this.state;
-        if(queryField === 'all') {
-            this.props.updateResultContainer(query, query.type);
-        } else {
-            this.props.updateResultContainer(query, queryField);
-        }
+        this.props.updateResultContainer(query, queryField);
     }
 
     render() {

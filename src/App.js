@@ -56,13 +56,13 @@ class App extends React.Component {
         });
 
         for(let [i, album] of albums.entries()) {
-            setTimeout(() => {
-                getPictures(album[1], this.displayPictures);
+            const intId = setTimeout(() => {
+                getPictures(album[1], this.displayPictures, intId);
             }, i*500);
         };
 
-        setTimeout(() => {
-            getAdditionnalDetails(id, this.updateAdditionnalDetails);
+        const intId = setTimeout(() => {
+            getAdditionnalDetails(id, this.updateAdditionnalDetails, intId);
         }, 500);
 
 

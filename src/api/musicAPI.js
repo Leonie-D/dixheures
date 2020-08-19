@@ -1,4 +1,4 @@
-export const getSearchByName = (query, queryField, offset, updateResult) => {
+export const getSearchByName = (query, queryField, offset, updateResult, token) => {
     const request = new XMLHttpRequest();
     query = query.replace("#", "");
     query = query.replace(/([\!\*\+\&\|\(\)\[\]\{\}\^\~\?\:\"])/g, "\\$1");
@@ -20,7 +20,7 @@ export const getSearchByName = (query, queryField, offset, updateResult) => {
             };
 
             // affichage des résultats
-            updateResult(resultList, responsesNb, offset, queryField);
+            updateResult(resultList, responsesNb, offset, queryField, token);
         };
     });
 
@@ -66,7 +66,7 @@ export const getAllRecordings = (query, queryField, offset, updateResult, getNex
     request.send();
 }
 
-export const getPictures = (albumId, displayPictures) => {
+export const getPictures = (albumId, displayPictures, intId) => {
     const request = new XMLHttpRequest();
 
     request.addEventListener('readystatechange', function() {
@@ -81,9 +81,11 @@ export const getPictures = (albumId, displayPictures) => {
 
     request.open("GET", "http://coverartarchive.org/release/"+albumId, true);
     request.send();
+
+    clearTimeout(intId);
 }
 
-export const getAdditionnalDetails = (recordingId, updateAdditionnalDetails) => {
+export const getAdditionnalDetails = (recordingId, updateAdditionnalDetails, intId) => {
     const request = new XMLHttpRequest();
 
     request.addEventListener('readystatechange', function() {
@@ -97,4 +99,6 @@ export const getAdditionnalDetails = (recordingId, updateAdditionnalDetails) => 
 
     request.open("GET", "http://musicbrainz.org/ws/2/recording/" + recordingId + "?inc=genres+ratings&fmt=json", true);
     request.send();
+
+    clearTimeout(intId);
 }
