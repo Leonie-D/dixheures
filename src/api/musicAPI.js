@@ -1,5 +1,6 @@
 export const getSearchByName = (query, queryField, offset, updateResult) => {
     const request = new XMLHttpRequest();
+    query = query.replace("#", "");
     query = query.replace(/([\!\*\+\&\|\(\)\[\]\{\}\^\~\?\:\"])/g, "\\$1");
     const resultList = [];
     const key = queryField+"s";
@@ -29,7 +30,8 @@ export const getSearchByName = (query, queryField, offset, updateResult) => {
 
 export const getAllRecordings = (query, queryField, offset, updateResult, getNextResults, token, continuer) => {
     const request = new XMLHttpRequest();
-    query = '"' + query.replace(/([\!\*\+\&\|\(\)\[\]\{\}\^\~\?\:\"])/g, "\\$1") + '"';
+    query = query.replace("#", "");
+    query = '"' + query.replace(/([\!\*\+\&\#\|\(\)\[\]\{\}\^\~\?\:\"])/g, "\\$1") + '"';
     const recordingsList = [];
 
     request.addEventListener('readystatechange', function() {
@@ -81,4 +83,17 @@ export const getPictures = (albumId, displayPictures, intId) => {
     request.send();
 
     clearTimeout(intId);
+}
+
+export const getAditionnalDetails = (recordingId) => {
+    const request = new XMLHttpRequest();
+
+    request.addEventListener('readystatechange', function() {
+        if (request.readyState === XMLHttpRequest.DONE && (request.status === 200 || request.status === 304)) {
+            const genres = JSON.parse(request.responseText).genres;
+        }
+    });
+
+    request.open("GET", "http://musicbrainz.org/ws/2/recording/" + recordingId + "?inc=genres+ratings&fmt=json", true);
+    request.send();
 }

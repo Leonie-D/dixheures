@@ -9,7 +9,6 @@ class SearchForm extends React.Component {
             "query" : "",
             "queryField" : "all",
             "result" : [],
-            "menuIsOpen" : false,
         };
         this.intIds = [];
         this.focusOnSelect = false;
@@ -21,8 +20,12 @@ class SearchForm extends React.Component {
                 case 'all' :
                     // pas très convaincue par ce système qui alimente le menu déroulantpar bloc de 100 entités de même type...
                     getSearchByName(query, 'artist', offset, this.updateResult);
-                    getSearchByName(query, 'release', offset, this.updateResult);
-                    getSearchByName(query, 'recording', offset, this.updateResult);
+                    setTimeout(() => {
+                        getSearchByName(query, 'release', offset, this.updateResult)
+                    }, 1000); // génère quand même des erreurs 503...
+                    setTimeout(() => {
+                        getSearchByName(query, 'recording', offset, this.updateResult)
+                    }, 1000); // génère quand même des erreurs 503...
                     break;
                 case 'artist' :
                 case 'release' :
@@ -47,7 +50,6 @@ class SearchForm extends React.Component {
             this.setState({
                 "query" : query,
                 "result" : [],
-                "menuIsOpen" : true,
             });
 
             // annuler les requetes liées à l'ancienne valeur de l'input
@@ -55,7 +57,9 @@ class SearchForm extends React.Component {
 
             // si champ non vide, envoyer la première requete pour mettre à jour en temps réel le menu déroulant
             if(query !== "") {
-                this.sendRequest(queryField, query, 0);
+                setTimeout(() => {
+                    this.sendRequest(queryField, query, 0);
+                }, 500);
             }
         }
     }
@@ -63,7 +67,6 @@ class SearchForm extends React.Component {
     updateFinalQuery = (query, action) => {
         this.setState({
             "query" : query !== null ? query : "",
-            "menuIsOpen" : false,
         });
 
         // annuler les requetes liées à l'ancienne valeur de l'input
@@ -76,11 +79,9 @@ class SearchForm extends React.Component {
 
         // indiquer si focus lié à la sélection ou non (pour removeFinalQuery)
         this.focusOnSelect = true;
-        console.log('finalquery');
     }
 
     removeFinalQuery = () => {
-        console.log(this.focusOnSelect);
         if(this.focusOnSelect) {
             // réinitialisation de la variable
             this.focusOnSelect = false;
@@ -88,7 +89,6 @@ class SearchForm extends React.Component {
             this.setState({
                 "query" : "",
                 "result" : [],
-                "menuIsOpen" : true,
             });
 
             // annuler les requetes liées à l'ancienne valeur de l'input
@@ -99,21 +99,12 @@ class SearchForm extends React.Component {
         }
     }
 
-    blur = () => {
-        console.log('blur');
-        this.setState({
-            "menuIsOpen" : false
-        });
-    }
-
     updateField = (queryField) => {
         const query = typeof this.state.query === "string" ? this.state.query : this.state.query.label;
-        console.log('updateField');
 
         this.setState({
             "queryField" : queryField.value,
             "result" : [],
-            "menuIsOpen" : true,
         });
 
         // annuler les requetes liées à l'ancienne valeur de l'input
@@ -152,9 +143,8 @@ class SearchForm extends React.Component {
     submit = (ev) => {
         ev.preventDefault();
 
-        this.setState({
-            "menuIsOpen" : false,
-        });
+        // réinitialisation de la variable
+        this.focusOnSelect = false;
 
         // stopper les requêtes précédentes visant à compléter le menu déroulant
         this.clearPreviousTimeOut();
@@ -188,9 +178,7 @@ class SearchForm extends React.Component {
                         onInputChange = {this.updateQuery}
                         onChange = {this.updateFinalQuery}
                         onFocus = {this.removeFinalQuery}
-                        onBlur = {this.blur}
                         options = {result}
-                        menuIsOpen = {menuIsOpen}
                         noOptionsMessage = {() => "Hum... je ne trouve aucun résultat"}
                         inputValue = {typeof query === "string" ? query : ''}
                         value = {query}
